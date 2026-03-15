@@ -1,16 +1,1 @@
-{
-  "name": "touch-battle",
-  "version": "2.0.0",
-  "description": "Touch Battle Multiplayer Game",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2"
-  },
-  "engines": {
-    "node": "18.x"
-  }
-}
+web: node server.js
