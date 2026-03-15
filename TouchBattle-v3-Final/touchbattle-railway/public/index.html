@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TOUCH BATTLE 3.0 ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Unbounded:wght@700&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root{--bg:#060608;--s1:#0e0e16;--s2:#161622;--s3:#1e1e30;--r:#ff2752;--b:#00e5ff;--y:#ffe600;--g:#00ff88;--o:#ff7a00;--p:#cc44ff;--pk:#ff44aa;--w:#f0f0ff;--dim:#44445a;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--w);font-family:'Unbounded',sans-serif;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;transition:opacity .3s,transform .3s;}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
+#home{gap:22px;background:radial-gradient(ellipse at 50% 0%,rgba(255,39,82,.14) 0%,transparent 55%);}
+.logo-main{font-family:'Bebas Neue',sans-serif;font-size:clamp(68px,20vw,120px);line-height:.85;letter-spacing:3px;background:linear-gradient(160deg,var(--r) 0%,#ff6b35 30%,var(--y) 60%,var(--b) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:lp 4s ease-in-out infinite;text-align:center;}
+@keyframes lp{0%,100%{filter:drop-shadow(0 0 40px rgba(255,39,82,.4));}50%{filter:drop-shadow(0 0 80px rgba(0,229,255,.5));}}
+.logo-v,.logo-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:4px;color:var(--b);opacity:.7;text-align:center;}
+.logo-tag{color:var(--dim);opacity:1;letter-spacing:3px;font-size:9px;margin-top:4px;}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px;}
+.mc{background:var(--s2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px 14px;cursor:pointer;transition:transform .15s;text-align:center;}
+.mc:active{transform:scale(.93);}
+.mc.hot{border-color:rgba(255,39,82,.4);box-shadow:0 0 24px rgba(255,39,82,.15);}
+.mc.cool{border-color:rgba(0,229,255,.3);box-shadow:0 0 24px rgba(0,229,255,.1);}
+.mc-icon{font-size:30px;margin-bottom:6px;}.mc-name{font-size:10px;letter-spacing:2px;font-weight:700;}.mc-desc{font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:3px;font-family:'DM Mono',monospace;}
+.btn{border:none;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;cursor:pointer;padding:15px 20px;width:100%;position:relative;overflow:hidden;transition:transform .12s;}
+.btn:active{transform:scale(.95);}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 50%);pointer-events:none;}
+.btn-r{background:linear-gradient(135deg,var(--r),#a8001e);color:#fff;box-shadow:0 0 24px rgba(255,39,82,.35);}
+.btn-b{background:transparent;color:var(--b);border:1.5px solid var(--b);}
+.btn-g{background:linear-gradient(135deg,var(--g),#006633);color:#000;}
+.btn-y{background:linear-gradient(135deg,var(--y),#aa9900);color:#000;}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid rgba(255,255,255,.08);font-size:14px;letter-spacing:2px;padding:12px;}
+.field{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--w);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:3px;padding:14px 16px;text-align:center;text-transform:uppercase;outline:none;width:100%;}
+.field:focus{border-color:var(--b);box-shadow:0 0 16px rgba(0,229,255,.2);}
+.lbl{font-size:10px;letter-spacing:3px;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:5px;}
+.fg{display:flex;flex-direction:column;gap:4px;width:100%;}
+.panel{background:var(--s2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:22px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;}
+.ph{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--b);}
+/* LOBBY */
+#lobby{gap:14px;padding-top:36px;padding-bottom:36px;}
+.code-box{background:var(--s2);border:2px solid var(--y);border-radius:14px;padding:16px 28px;text-align:center;width:100%;max-width:360px;box-shadow:0 0 30px rgba(255,230,0,.15);}
+.code-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--dim);}
+.code-val{font-family:'Bebas Neue',sans-serif;font-size:60px;letter-spacing:14px;color:var(--y);filter:drop-shadow(0 0 12px rgba(255,230,0,.5));line-height:1.1;}
+.plist{width:100%;max-width:360px;}.plbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:8px;}
+.pitem{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--s1);border:1px solid rgba(255,255,255,.06);border-radius:10px;margin-bottom:7px;animation:sli .25s ease both;}
+@keyframes sli{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
+.picon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.pname{flex:1;font-size:14px;font-weight:700;}
+.pbadge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:20px;}
+.b-host{background:rgba(255,230,0,.15);color:var(--y);border:1px solid rgba(255,230,0,.3);}
+.b-ready{background:rgba(0,255,136,.1);color:var(--g);border:1px solid rgba(0,255,136,.3);}
+.b-wait{background:rgba(255,255,255,.04);color:var(--dim);border:1px solid rgba(255,255,255,.1);}
+.lbtns{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;}
+/* PICKER */
+#picker{position:fixed;inset:0;z-index:800;background:rgba(6,6,8,.96);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s;overflow-y:auto;padding-top:36px;}
+#picker.open{opacity:1;pointer-events:all;}
+.picker-t{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:6px;text-align:center;flex-shrink:0;}
+.glist{display:flex;flex-direction:column;gap:6px;width:100%;max-width:380px;}
+.grow{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s2);border-radius:12px;border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:transform .12s;}
+.grow:active{transform:scale(.96);}
+.gicon{font-size:24px;width:38px;text-align:center;flex-shrink:0;}
+.ginfo{flex:1;}.gname{font-size:12px;font-weight:700;letter-spacing:1px;}.gdesc{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);margin-top:2px;}
+.gbadge{font-family:'DM Mono',monospace;font-size:9px;padding:3px 7px;border-radius:20px;letter-spacing:1px;flex-shrink:0;}
+/* HUD */
+.hud{width:100%;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,6,8,.92);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(12px);flex-shrink:0;z-index:20;}
+.ht{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--b);min-width:52px;text-align:center;}
+.ht.red{color:var(--r);animation:tp .5s infinite;}
+@keyframes tp{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.hm{text-align:center;}.hp{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;color:var(--y);}
+.hl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);}
+.hr{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;color:var(--r);min-width:44px;text-align:right;}
+.arena{flex:1;position:relative;width:100%;overflow:hidden;}
+.mlb{position:absolute;top:8px;right:6px;z-index:10;display:flex;flex-direction:column;gap:3px;}
+.mi{display:flex;align-items:center;gap:5px;background:rgba(6,6,8,.78);border-radius:20px;padding:3px 9px 3px 5px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.06);}
+.md{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+/* OBJECTS */
+.go{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%) scale(0);animation:pop .2s cubic-bezier(.34,1.56,.64,1) forwards;cursor:pointer;}
+@keyframes pop{to{transform:translate(-50%,-50%) scale(1);}}
+.go.die{animation:upop .2s ease-in forwards;}
+@keyframes upop{to{transform:translate(-50%,-50%) scale(0);opacity:0;}}
+.go-c{width:68px;height:68px;font-size:26px;background:radial-gradient(circle at 35% 35%,#ff7a9a,var(--r));box-shadow:0 0 20px rgba(255,39,82,.6);}
+.go-b{width:64px;height:64px;font-size:28px;background:radial-gradient(circle at 35% 35%,#ffaa44,var(--o));box-shadow:0 0 20px rgba(255,122,0,.6);animation:pop .2s cubic-bezier(.34,1.56,.64,1) forwards,bp 1s infinite .2s;}
+@keyframes bp{0%,100%{box-shadow:0 0 20px rgba(255,122,0,.6);}50%{box-shadow:0 0 40px rgba(255,122,0,.9);}}
+.go-s{width:58px;height:58px;font-size:24px;background:radial-gradient(circle at 35% 35%,#88ffee,var(--b));box-shadow:0 0 20px rgba(0,229,255,.6);}
+.go-f{width:58px;height:58px;font-size:24px;background:radial-gradient(circle at 35% 35%,#aaddff,#0055ff);box-shadow:0 0 20px rgba(0,85,255,.6);}
+.go-pass{width:72px;height:72px;font-size:30px;background:radial-gradient(circle at 35% 35%,#ffee88,var(--p));box-shadow:0 0 25px rgba(200,68,255,.7);animation:pop .2s cubic-bezier(.34,1.56,.64,1) forwards,pp 1s infinite .2s;}
+@keyframes pp{0%,100%{box-shadow:0 0 25px rgba(200,68,255,.7);}50%{box-shadow:0 0 50px rgba(200,68,255,1);transform:translate(-50%,-50%) scale(1.08);}}
+.spop{position:absolute;font-family:'Bebas Neue',sans-serif;font-size:30px;pointer-events:none;transform:translate(-50%,-50%);animation:sf .9s ease-out forwards;z-index:20;text-shadow:0 0 10px currentColor;}
+@keyframes sf{0%{opacity:1;transform:translate(-50%,-50%) scale(1.3);}100%{opacity:0;transform:translate(-50%,calc(-50% - 70px)) scale(.8);}}
+.expl{position:absolute;width:110px;height:110px;border-radius:50%;transform:translate(-50%,-50%) scale(0);animation:ex .4s ease-out forwards;pointer-events:none;}
+@keyframes ex{0%{transform:translate(-50%,-50%) scale(0);opacity:1;background:radial-gradient(circle,#ffff00,#ff6600 40%,transparent 70%);}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0;}}
+.prox-bar{position:absolute;bottom:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--p),var(--b));transform:scaleX(0);transform-origin:left;transition:transform .4s;z-index:30;}
+.prox-badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(200,68,255,.92);border-radius:20px;padding:7px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;z-index:31;opacity:0;transition:opacity .3s;white-space:nowrap;}
+.prox-badge.show{opacity:1;}
+/* SHAKE BTN — iPhone safe */
+.shake-btn{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--r),#aa0022);border:none;border-radius:50px;padding:16px 32px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:#fff;z-index:400;cursor:pointer;box-shadow:0 0 28px rgba(255,39,82,.5);display:none;animation:sp 1s infinite;}
+@keyframes sp{0%,100%{box-shadow:0 0 28px rgba(255,39,82,.5);}50%{box-shadow:0 0 50px rgba(255,39,82,.9);}}
+.shake-btn.visible{display:block;}
+.hold-glow{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(204,68,255,.3) 0%,transparent 70%);pointer-events:none;opacity:0;transition:opacity .4s;z-index:100;}
+.hold-glow.on{opacity:1;}
+/* TERRITORY */
+#terr{padding:0;justify-content:flex-start;}
+.terr-hud{width:100%;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,6,8,.9);border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.terr-bar{height:18px;border-radius:9px;overflow:hidden;background:var(--s2);width:100%;max-width:240px;display:flex;}
+/* SNAKE */
+#snake-game{padding:0;justify-content:flex-start;}
+.snake-dpad{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:4px;z-index:50;}
+.dpad-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
+.dpad-btn:active{background:rgba(255,255,255,.28);}
+.dpad-empty{background:transparent;border:none;}
+/* RHYTHM */
+#rhythm{flex-direction:column;gap:0;padding:0;justify-content:flex-start;}
+.rhythm-track{flex:1;position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,var(--bg) 0%,var(--s1) 100%);}
+.rhythm-line{position:absolute;bottom:80px;left:0;right:0;height:3px;background:rgba(255,255,255,.15);}
+.beat-flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .08s;}
+.rhythm-note{position:absolute;border-radius:14px;cursor:pointer;}
+.rsr{display:flex;justify-content:space-around;width:100%;padding:8px 14px;background:rgba(6,6,8,.9);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);}
+.rsp{text-align:center;}.rsp-n{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);}
+.rsp-s{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+.rhythm-tap{width:100%;padding:18px;background:var(--s2);border:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--w);cursor:pointer;flex-shrink:0;border-top:2px solid rgba(255,255,255,.08);}
+.rhythm-tap:active{background:var(--s3);}
+/* SLOT */
+#slot-game{flex-direction:column;gap:18px;}
+.slot-machine{background:var(--s2);border:2px solid rgba(255,255,255,.1);border-radius:20px;padding:20px;width:100%;max-width:320px;text-align:center;}
+.slot-reels{display:flex;gap:8px;justify-content:center;margin:14px 0;}
+.slot-reel{width:72px;height:88px;background:var(--s1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:42px;border:2px solid rgba(255,255,255,.1);}
+.slot-reel.spin{animation:rspin .6s ease-out;}
+@keyframes rspin{0%{transform:translateY(-30px);opacity:.5;}100%{transform:translateY(0);opacity:1;}}
+.slot-win{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;min-height:32px;}
+.slot-scores{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:360px;}
+.slotp{background:var(--s2);border-radius:10px;padding:8px 12px;text-align:center;border:1px solid rgba(255,255,255,.07);}
+.slotp-n{font-size:9px;font-family:'DM Mono',monospace;}.slotp-s{font-family:'Bebas Neue',sans-serif;font-size:26px;}
+/* MEMORY */
+#memory-game{flex-direction:column;gap:10px;padding:14px;}
+.mem-grid{display:grid;gap:7px;width:100%;max-width:360px;}
+.mem-card{aspect-ratio:1;border-radius:10px;background:var(--s2);border:2px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:transform .18s,background .18s;}
+.mem-card.flipped{background:var(--s3);border-color:rgba(255,255,255,.25);}
+.mem-card.matched{background:rgba(0,255,136,.15);border-color:var(--g);animation:mch .3s ease;}
+@keyframes mch{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+.mem-sr{display:flex;justify-content:space-around;width:100%;max-width:360px;}
+.mem-p{text-align:center;}.mem-pn{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;}
+.mem-ps{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;}
+/* MINE */
+#mine-game{flex-direction:column;gap:10px;padding:12px;}
+.mine-grid{display:grid;gap:4px;width:100%;max-width:340px;}
+.mine-cell{aspect-ratio:1;border-radius:7px;background:var(--s2);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:14px;font-family:'Bebas Neue',sans-serif;cursor:pointer;}
+.mine-cell:active{transform:scale(.9);}
+.mine-cell.revealed{background:var(--s1);border-color:rgba(255,255,255,.05);}
+.mine-cell.boom{background:rgba(255,39,82,.3);border-color:var(--r);}
+.mine-cell.flagged{background:rgba(255,230,0,.1);border-color:var(--y);}
+.mine-info{display:flex;justify-content:space-between;width:100%;max-width:340px;}
+.mine-stat{text-align:center;}.mine-stat-n{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);}
+.mine-stat-v{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+/* FIGHT */
+#fight{flex-direction:column;gap:14px;background:radial-gradient(ellipse at 50% 50%,rgba(255,39,82,.15) 0%,transparent 70%);}
+.fvs{font-family:'Bebas Neue',sans-serif;font-size:80px;line-height:.85;background:linear-gradient(135deg,var(--r),var(--y));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;}
+.fsrow{display:flex;justify-content:space-around;width:100%;max-width:360px;}
+.fp{text-align:center;}.fpn{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;}
+.fps{font-family:'Bebas Neue',sans-serif;font-size:50px;line-height:1;}
+.fsep{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--dim);align-self:center;}
+.ftgt{width:min(220px,64vw);height:min(220px,64vw);border-radius:50%;border:4px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;margin:8px auto;transition:transform .08s,background .2s;}
+.ftgt:active{transform:scale(.9);}
+/* SHAKE GAME */
+#shake-game{flex-direction:column;gap:14px;}
+.sk-ico{font-size:80px;animation:ski 3s ease-in-out infinite;}
+@keyframes ski{0%,100%{transform:rotate(-8deg);}50%{transform:rotate(8deg);}}
+.sk-val{font-family:'Bebas Neue',sans-serif;font-size:60px;color:var(--g);line-height:1;}
+.sk-bar-w{width:100%;max-width:300px;height:20px;background:var(--s2);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+.sk-bar{height:100%;width:0%;border-radius:10px;background:linear-gradient(90deg,var(--g),var(--b),var(--y));transition:width .1s;}
+.sk-scores{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.skp{background:var(--s2);border-radius:10px;padding:8px 12px;text-align:center;border:1px solid rgba(255,255,255,.07);}
+.skpn{font-size:9px;font-family:'DM Mono',monospace;}.skps{font-family:'Bebas Neue',sans-serif;font-size:28px;}
+/* BLUFF */
+#bluff{flex-direction:column;gap:12px;padding:18px;}
+.bq{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;text-align:center;line-height:1.2;}
+.bopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px;}
+.bopt{background:var(--s2);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;transition:transform .12s;font-size:12px;font-weight:700;}
+.bopt:active{transform:scale(.94);}
+.bopt.ok{border-color:var(--g);background:rgba(0,255,136,.15);}
+.bopt.no{border-color:var(--r);background:rgba(255,39,82,.15);}
+.btbar{width:100%;max-width:360px;height:5px;background:var(--s2);border-radius:3px;overflow:hidden;}
+.btfill{height:100%;background:linear-gradient(90deg,var(--g),var(--b));border-radius:3px;transition:width .1s linear;}
+.bstreak{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:3px;}
+/* RESULTS */
+#results{gap:16px;padding:36px 20px;}
+.res-t{font-family:'Bebas Neue',sans-serif;font-size:50px;letter-spacing:6px;background:linear-gradient(135deg,var(--y),var(--r));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;}
+.podwrap{display:flex;align-items:flex-end;justify-content:center;gap:7px;width:100%;max-width:340px;}
+.pi{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;animation:pu .5s cubic-bezier(.34,1.56,.64,1) both;}
+.pi:nth-child(1){animation-delay:.2s;}.pi:nth-child(2){animation-delay:0s;}.pi:nth-child(3){animation-delay:.4s;}
+@keyframes pu{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+.pm{font-size:28px;}.pn{font-size:11px;font-weight:700;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;}
+.ppts{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);}
+.pbase{width:100%;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;padding:7px;}
+.ppos{font-family:'Bebas Neue',sans-serif;font-size:26px;color:rgba(255,255,255,.5);}
+.rlist{width:100%;max-width:360px;}
+.ritem{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--s2);border:1px solid rgba(255,255,255,.06);border-radius:10px;margin-bottom:7px;animation:sli .3s ease both;}
+.rpos{font-family:'Bebas Neue',sans-serif;font-size:22px;min-width:25px;}
+.rname{flex:1;font-size:15px;font-weight:700;}.rscore{font-family:'DM Mono',monospace;font-size:14px;color:var(--y);}
+.rbtns{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;}
+/* OVERLAYS */
+#mergeOv{position:fixed;inset:0;z-index:600;background:rgba(6,6,8,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;pointer-events:none;transition:opacity .4s;}
+#mergeOv.on{opacity:1;pointer-events:all;}
+.mr{width:130px;height:130px;border-radius:50%;border:3px solid var(--y);display:flex;align-items:center;justify-content:center;font-size:55px;animation:ms 2s linear infinite;box-shadow:0 0 50px rgba(255,204,0,.4);}
+@keyframes ms{0%{border-color:var(--y);}33%{border-color:var(--r);}66%{border-color:var(--b);}100%{border-color:var(--y);}}
+.mt{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:6px;background:linear-gradient(90deg,var(--y),var(--r));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#cdown{position:fixed;inset:0;z-index:700;background:rgba(6,6,8,.92);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+#cdown.on{opacity:1;pointer-events:all;}
+.cn{font-family:'Bebas Neue',sans-serif;font-size:180px;color:var(--b);filter:drop-shadow(0 0 60px var(--b));animation:cdp .85s ease-in-out;}
+@keyframes cdp{0%{transform:scale(1.6);opacity:0;}30%{opacity:1;}80%{transform:scale(1);}100%{transform:scale(.7);opacity:0;}}
+.fxb{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-30px);background:rgba(14,14,22,.95);border-radius:8px;padding:9px 20px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;z-index:200;opacity:0;transition:opacity .2s,transform .2s;border:1px solid rgba(255,255,255,.08);white-space:nowrap;}
+.fxb.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s2);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 20px;font-size:13px;z-index:999;transition:transform .3s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.6);font-family:'DM Mono',monospace;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.frz{position:fixed;inset:0;z-index:60;background:rgba(0,85,255,.18);pointer-events:none;opacity:0;transition:opacity .3s;border:4px solid rgba(0,85,255,.5);}
+.frz.on{opacity:1;}
+.chaos-bar{position:fixed;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--r),var(--o),var(--y),var(--g),var(--b),var(--p),var(--r));background-size:200%;animation:cr 1s linear infinite;z-index:1000;display:none;}
+@keyframes cr{0%{background-position:0%;}100%{background-position:200%;}}
+.part{position:fixed;border-radius:50%;pointer-events:none;z-index:500;animation:pf 1s ease-out forwards;}
+@keyframes pf{0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0);}}
+.conn-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.conn-ok{background:var(--g);box-shadow:0 0 8px var(--g);}
+.conn-err{background:var(--r);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.spin{width:50px;height:50px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--b);border-radius:50%;animation:spinn 1s linear infinite;}
+@keyframes spinn{to{transform:rotate(360deg);}}
+#connecting{gap:20px;}
+</style>
+</head>
+<body>
+<div id="home" class="screen">
+  <div><div class="logo-v">v3.0 · 10 GIOCHI · MULTIPLAYER REALE</div><div class="logo-main">TOUCH<br>BATTLE</div><div class="logo-tag">PROXIMITY · TILT · SHAKE · HOLD · MAX 8</div></div>
+  <div class="mode-grid">
+    <div class="mc hot" onclick="showP('create')"><div class="mc-icon">🔥</div><div class="mc-name">CREA</div><div class="mc-desc">Nuova stanza</div></div>
+    <div class="mc cool" onclick="showP('join')"><div class="mc-icon">🎮</div><div class="mc-name">ENTRA</div><div class="mc-desc">Codice stanza</div></div>
+  </div>
+  <div id="createPanel" class="panel" style="display:none;flex-direction:column;">
+    <div class="ph">NUOVA STANZA</div>
+    <div class="fg"><div class="lbl">IL TUO NOME</div><input class="field" id="hName" placeholder="NOME" maxlength="12" style="text-align:left;letter-spacing:1px;font-size:15px;"></div>
+    <button class="btn btn-r" onclick="createRoom()">CREA ⚡</button>
+  </div>
+  <div id="joinPanel" class="panel" style="display:none;flex-direction:column;">
+    <div class="ph">ENTRA IN STANZA</div>
+    <div class="fg"><div class="lbl">IL TUO NOME</div><input class="field" id="pName" placeholder="NOME" maxlength="12" style="text-align:left;letter-spacing:1px;font-size:15px;"></div>
+    <div class="fg"><div class="lbl">CODICE</div><input class="field" id="codeIn" placeholder="XXXX" maxlength="4"></div>
+    <button class="btn btn-b" onclick="joinRoom()">ENTRA →</button>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);"><span class="conn-dot" id="connDot"></span><span id="connLbl">connessione...</span></div>
+</div>
+<div id="connecting" class="screen hidden"><div class="spin"></div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;">CONNESSIONE...</div></div>
+<div id="lobby" class="screen hidden">
+  <div class="code-box"><div class="code-lbl">CODICE STANZA</div><div class="code-val" id="lobCode">----</div><div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:2px;">Mostralo agli amici 📱</div></div>
+  <div class="plist"><div class="plbl" id="pCnt">GIOCATORI 0/8</div><div id="pList"></div></div>
+  <div class="lbtns">
+    <button class="btn btn-r" id="startBtn" onclick="openPicker()" style="display:none;">🎲 SCEGLI GIOCO</button>
+    <button class="btn btn-g" id="readyBtn" onclick="toggleReady()" style="font-size:16px;padding:13px;">✓ SONO PRONTO</button>
+    <button class="btn btn-ghost" onclick="goHome()">← ESCI</button>
+  </div>
+</div>
+<div id="picker">
+  <div class="picker-t">🎮 SCEGLI GIOCO</div>
+  <div class="glist" id="gList"></div>
+  <button class="btn btn-ghost" style="max-width:380px;margin-top:6px;flex-shrink:0;" onclick="closePicker()">ANNULLA</button>
+</div>
+<div id="tb" class="screen hidden" style="padding:0;justify-content:flex-start;">
+  <div class="hud"><div class="ht" id="tbT">60</div><div class="hm"><div class="hp" id="tbS">0</div><div class="hl">PUNTI</div></div><div class="hr" id="tbR">#1</div></div>
+  <div class="arena" id="tbA"><div class="frz" id="tbFrz"></div><div class="mlb" id="tbLb"></div><div class="prox-bar" id="pBar"></div><div class="prox-badge" id="pBadge">📲 PROSSIMITÀ +5!</div></div>
+</div>
+<div id="terr" class="screen hidden">
+  <div class="terr-hud">
+    <div class="ht" id="terrT" style="font-size:30px;color:var(--b);">60</div>
+    <div style="flex:1;margin:0 10px;"><div class="terr-bar" id="terrBar"></div></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--y);" id="terrMyPct">0%</div>
+  </div>
+  <canvas id="terrCanvas" style="flex:1;width:100%;touch-action:none;display:block;"></canvas>
+</div>
+<div id="snake-game" class="screen hidden">
+  <div class="hud"><div class="ht" id="snakeT">60</div><div class="hm"><div class="hp" id="snakeS">0</div><div class="hl">MELE</div></div><div class="hr" id="snakeR">#1</div></div>
+  <canvas id="snakeCanvas" style="flex:1;width:100%;display:block;"></canvas>
+  <div class="snake-dpad">
+    <div class="dpad-empty"></div><div class="dpad-btn" ontouchstart="snakeDir(0,-1);event.preventDefault()">⬆️</div><div class="dpad-empty"></div>
+    <div class="dpad-btn" ontouchstart="snakeDir(-1,0);event.preventDefault()">⬅️</div><div class="dpad-empty"></div><div class="dpad-btn" ontouchstart="snakeDir(1,0);event.preventDefault()">➡️</div>
+    <div class="dpad-empty"></div><div class="dpad-btn" ontouchstart="snakeDir(0,1);event.preventDefault()">⬇️</div><div class="dpad-empty"></div>
+  </div>
+</div>
+<div id="rhythm" class="screen hidden" style="flex-direction:column;gap:0;padding:0;justify-content:flex-start;">
+  <div class="rsr" id="rhythmScoreRow"></div>
+  <div class="rhythm-track" id="rhythmTrack"><div class="rhythm-line"></div><div class="beat-flash" id="beatFlash"></div></div>
+  <button class="rhythm-tap" ontouchstart="rhythmTap(event)" onmousedown="rhythmTap(event)">🎵 TAP AL RITMO!</button>
+</div>
+<div id="slot-game" class="screen hidden" style="flex-direction:column;gap:18px;">
+  <div class="slot-machine">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--y);">SLOT BATTLE 🎰</div>
+    <div class="slot-reels"><div class="slot-reel" id="sr0">🎰</div><div class="slot-reel" id="sr1">🎰</div><div class="slot-reel" id="sr2">🎰</div></div>
+    <div class="slot-win" id="slotWin"></div>
+    <button class="btn btn-r" id="slotBtn" onclick="slotSpin()" style="font-size:18px;padding:14px;">🎰 GIRA!</button>
+  </div>
+  <div class="slot-scores" id="slotScores"></div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--y);" id="slotTimer">60</div>
+</div>
+<div id="memory-game" class="screen hidden" style="flex-direction:column;gap:10px;padding:14px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:360px;">
+    <div class="mem-sr" id="memSR" style="flex:1;"></div>
+    <div class="ht" id="memT" style="font-size:26px;color:var(--y);min-width:44px;">60</div>
+  </div>
+  <div class="mem-grid" id="memGrid"></div>
+</div>
+<div id="mine-game" class="screen hidden" style="flex-direction:column;gap:10px;padding:12px;">
+  <div class="mine-info">
+    <div class="mine-stat"><div class="mine-stat-n">MINE</div><div class="mine-stat-v" id="mineCount">💣 10</div></div>
+    <div class="mine-stat"><div class="mine-stat-n">PUNTI</div><div class="mine-stat-v" id="mineScore" style="color:var(--g);">0</div></div>
+    <div class="mine-stat"><div class="mine-stat-n">TEMPO</div><div class="mine-stat-v" id="mineTimer" style="color:var(--y);">60</div></div>
+  </div>
+  <div class="mine-grid" id="mineGrid"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--dim);text-align:center;">Tieni premuto = 🚩 flag</div>
+</div>
+<div id="fight" class="screen hidden">
+  <div class="fvs">SCONTRO<br>DIRETTO</div>
+  <div class="fsrow">
+    <div class="fp"><div class="fpn" id="fN1">P1</div><div class="fps" id="fS1" style="color:var(--r)">0</div></div>
+    <div class="fsep">VS</div>
+    <div class="fp"><div class="fpn" id="fN2">P2</div><div class="fps" id="fS2" style="color:var(--b)">0</div></div>
+  </div>
+  <div class="ftgt" id="ftgt" onclick="fightTap()"><div style="font-size:62px;" id="fIco">⏳</div></div>
+  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--dim);text-align:center;" id="fHint">Aspetta il segnale...</div>
+  <div class="ht" id="fT" style="color:var(--y);font-size:30px;">60</div>
+</div>
+<div id="shake-game" class="screen hidden" style="flex-direction:column;gap:14px;">
+  <div class="sk-ico" id="skIco">📱</div>
+  <div class="sk-val" id="skVal">0</div>
+  <div class="hl">SHAKE POWER</div>
+  <div class="sk-bar-w"><div class="sk-bar" id="skBar"></div></div>
+  <div class="sk-scores" id="skScores"></div>
+  <div class="ht" style="color:var(--g);font-size:26px;" id="skT">30</div>
+  <div class="hl">Agita oppure usa il tasto rosso 👇</div>
+</div>
+<div id="bluff" class="screen hidden" style="flex-direction:column;gap:12px;padding:18px;">
+  <div class="bstreak" id="bStr">🔥 0 CORRETTE</div>
+  <div class="btbar"><div class="btfill" id="btFill" style="width:100%"></div></div>
+  <div class="bq" id="bQ">Caricamento...</div>
+  <div class="bopts" id="bOpts"></div>
+  <div class="hl" id="bScLbl">PUNTI: 0</div>
+</div>
+<div id="results" class="screen hidden">
+  <div class="res-t" id="resT">RISULTATI</div>
+  <div class="podwrap" id="pod"></div>
+  <div class="rlist" id="rList"></div>
+  <div class="rbtns">
+    <button class="btn btn-y" onclick="openPicker()">🎲 ALTRO GIOCO</button>
+    <button class="btn btn-ghost" onclick="goHome()">← MENU</button>
+  </div>
+</div>
+<!-- AIR HOCKEY -->
+<div id="airh" class="screen hidden" style="padding:0;justify-content:flex-start;background:#06080a;">
+  <!-- Opponent HUD (rotated 180°) -->
+  <div id="ahHudOpp" style="width:100%;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-bottom:2px solid rgba(255,51,85,.35);flex-shrink:0;transform:rotate(180deg);">
+    <div>
+      <div id="ahOppName" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;font-weight:700;color:#ff3355;">AVVERSARIO</div>
+      <div id="ahOppServe" style="font-size:9px;letter-spacing:2px;color:var(--y);"></div>
+      <div id="ahOppPips" style="margin-top:3px;"></div>
+    </div>
+    <div id="ahOppScoreN" style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:#ff3355;">0</div>
+  </div>
+  <!-- Rink -->
+  <div id="ahRink" style="flex:1;position:relative;width:100%;overflow:hidden;">
+    <canvas id="ahCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <!-- Goal flash overlay -->
+    <div id="ahGoalFlash" style="position:absolute;inset:0;z-index:30;display:none;opacity:0;align-items:center;justify-content:center;transition:opacity .3s;background:rgba(6,8,10,.6);">
+      <div id="ahGoalTxt" style="font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:6px;filter:drop-shadow(0 0 30px currentColor);"></div>
+    </div>
+    <!-- Serve hint -->
+    <div id="ahServeHint" style="display:none;position:absolute;left:50%;bottom:55%;transform:translateX(-50%);background:rgba(255,204,0,.9);border-radius:20px;padding:6px 16px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:#000;font-weight:700;z-index:20;"></div>
+  </div>
+  <!-- My HUD -->
+  <div id="ahHudMe" style="width:100%;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-top:2px solid rgba(0,170,255,.35);flex-shrink:0;">
+    <div id="ahMyScoreN" style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:#00aaff;">0</div>
+    <div style="text-align:right;">
+      <div id="ahMyName" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;font-weight:700;color:#00aaff;">TU</div>
+      <div id="ahMyServe" style="font-size:9px;letter-spacing:2px;color:var(--y);"></div>
+      <div id="ahMyPips" style="margin-top:3px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="mergeOv"><div class="mr">🔗</div><div class="mt">FUSIONE!</div><div class="hl" id="mergeD">+10 punti</div></div>
+<div id="cdown"><div class="cn" id="cdownN">3</div></div>
+<div class="fxb" id="fxb"></div>
+<div class="toast" id="toast"></div>
+<div class="chaos-bar" id="chaosBar"></div>
+<div class="hold-glow" id="holdGlow"></div>
+<button class="shake-btn" id="shakeBtn" ontouchstart="manualShake(event)" onmousedown="manualShake(event)">💥 SHAKE!</button>
+<script src="game.js"></script>
+</body>
+</html>
