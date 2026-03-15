@@ -230,19 +230,9 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 /* ── AIR HOCKEY ── */
 #airh{padding:0;justify-content:flex-start;background:#06080a;}
-.ah-hud-opp{width:100%;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-bottom:2px solid rgba(255,51,85,.35);flex-shrink:0;transform:rotate(180deg);}
-.ah-hud-me{width:100%;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-top:2px solid rgba(0,170,255,.35);flex-shrink:0;}
-.ah-name{font-family:var(--fm);font-size:11px;letter-spacing:2px;font-weight:700;}
-.ah-score{font-family:var(--fd);font-size:52px;line-height:1;}
-.ah-serve{font-size:9px;letter-spacing:2px;color:var(--y);min-height:14px;}
-.ah-pips{margin-top:3px;display:flex;gap:4px;}
-.ah-pip{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);}
-.ah-pip.on{background:currentColor;box-shadow:0 0 6px currentColor;}
-#ahRink{flex:1;position:relative;width:100%;overflow:hidden;}
-#ahCanvas{position:absolute;inset:0;width:100%;height:100%;}
-.ah-goal-flash{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(6,8,10,.55);opacity:0;transition:opacity .25s;}
-.ah-goal-flash.show{display:flex;opacity:1;}
-.ah-goal-txt{font-family:var(--fd);font-size:80px;letter-spacing:6px;filter:drop-shadow(0 0 30px currentColor);}
+#airhSetup{padding:20px;}
+.ah-pip{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);display:inline-block;}
+.ah-pip.on{box-shadow:0 0 6px currentColor;}
 </style>
 </head>
 <body>
@@ -347,27 +337,65 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   </div>
 </div>
 
-<!-- AIR HOCKEY -->
-<div id="airh" class="screen hidden">
-  <div class="ah-hud-opp">
-    <div>
-      <div class="ah-name" id="ahOppName" style="color:#ff3355;">AVVERSARIO</div>
-      <div class="ah-serve" id="ahOppServe"></div>
-      <div class="ah-pips" id="ahOppPips"></div>
+<!-- AIR HOCKEY SETUP -->
+<div id="airhSetup" class="screen hidden" style="gap:18px;background:radial-gradient(ellipse at 50% 40%,rgba(0,170,255,.1) 0%,transparent 60%);padding:20px;overflow-y:auto;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;background:linear-gradient(135deg,#ff3355,#00aaff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;">AIR HOCKEY</div>
+  <!-- Diagramma fisico corretto -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div style="width:130px;background:rgba(255,51,85,.12);border:2px solid rgba(255,51,85,.5);border-bottom:none;border-radius:14px 14px 0 0;padding:10px;text-align:center;">
+      <div style="font-size:9px;letter-spacing:2px;color:#ff3355;font-family:'DM Mono',monospace;">🔴 PORTA G1</div>
+      <div style="font-size:24px;margin:6px 0;">😊</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;">GIOCATORE 1</div>
+      <div style="font-size:20px;margin-top:6px;color:rgba(255,255,255,.5);">●</div>
     </div>
-    <div class="ah-score" id="ahOppScore" style="color:#ff3355;">0</div>
+    <!-- Giuntura -->
+    <div style="width:130px;height:10px;background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.4),rgba(255,255,255,.1));position:relative;z-index:1;"></div>
+    <div style="width:130px;background:rgba(0,170,255,.12);border:2px solid rgba(0,170,255,.5);border-top:none;border-radius:0 0 14px 14px;padding:10px;text-align:center;">
+      <div style="font-size:20px;margin-bottom:6px;color:rgba(255,255,255,.5);">●</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;">GIOCATORE 2</div>
+      <div style="font-size:24px;margin:6px 0;">😊</div>
+      <div style="font-size:9px;letter-spacing:2px;color:#00aaff;font-family:'DM Mono',monospace;">🔵 PORTA G2</div>
+    </div>
+    <div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;margin-top:5px;">↑ bordi CENTRALI uniti ↑</div>
   </div>
-  <div id="ahRink">
-    <canvas id="ahCanvas"></canvas>
-    <div class="ah-goal-flash" id="ahGoalFlash"><div class="ah-goal-txt" id="ahGoalTxt">GOL!</div></div>
+  <div style="background:var(--s2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px;max-width:300px;width:100%;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:3px;color:#00aaff;margin-bottom:8px;">COME SI GIOCA</div>
+    <div style="font-size:12px;line-height:1.9;color:rgba(255,255,255,.65);font-family:'DM Mono',monospace;">
+      1. Poggia i telefoni su un tavolo<br>
+      2. Unisci i bordi CENTRALI a toccarsi<br>
+      3. Il disco scorre tra i due schermi<br>
+      4. La TUA porta è sul fondo del TUO schermo<br>
+      5. Prima a 5 gol vince!
+    </div>
   </div>
-  <div class="ah-hud-me">
-    <div class="ah-score" id="ahMyScore" style="color:#00aaff;">0</div>
+  <button class="btn btn-b" id="ahReadyBtn" onclick="ahConfirmReady()" style="max-width:300px;">✓ SONO PRONTO</button>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--dim);text-align:center;" id="ahWaitLbl">Aspetta che anche l'avversario sia pronto...</div>
+</div>
+
+<!-- AIR HOCKEY GAME -->
+<div id="airh" class="screen hidden" style="padding:0;justify-content:flex-start;background:#06080a;">
+  <!-- HUD top: avversario -->
+  <div style="width:100%;padding:5px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;">
+    <div id="ahOppPips" style="display:flex;gap:3px;"></div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;" id="ahOppName">AVVERSARIO</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;" id="ahOppScore">0</div>
+  </div>
+  <!-- Rink -->
+  <div id="ahRink" style="flex:1;position:relative;width:100%;overflow:hidden;">
+    <canvas id="ahCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div id="ahGoalFlash" style="position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(6,8,10,.6);">
+      <div id="ahGoalTxt" style="font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:6px;filter:drop-shadow(0 0 30px currentColor);"></div>
+    </div>
+  </div>
+  <!-- HUD bottom: io -->
+  <div style="width:100%;padding:5px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,10,.95);border-top:2px solid rgba(0,170,255,.5);flex-shrink:0;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;" id="ahMyScore">0</div>
     <div style="text-align:right;">
-      <div class="ah-name" id="ahMyName" style="color:#00aaff;">TU</div>
-      <div class="ah-serve" id="ahMyServe"></div>
-      <div class="ah-pips" id="ahMyPips" style="justify-content:flex-end;"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;" id="ahMyName">TU</div>
+      <div style="font-size:9px;letter-spacing:2px;color:var(--y);font-family:'DM Mono',monospace;" id="ahMyServe"></div>
+      <div style="font-size:9px;letter-spacing:2px;color:var(--dim);font-family:'DM Mono',monospace;" id="ahOppServe"></div>
     </div>
+    <div id="ahMyPips" style="display:flex;gap:3px;justify-content:flex-end;"></div>
   </div>
 </div>
 
@@ -497,10 +525,11 @@ function handleGameMsg(msg) {
     case 'auto_next': launchGame(msg.gameId, Date.now()); break;
     case 'merge':     triggerMergeVFX(); break;
     case 'freeze':    triggerFreezeVFX(); break;
-    case 'ah_paddle': ahOnPaddle(msg); break;
-    case 'ah_puck':   ahOnPuck(msg); break;
-    case 'ah_goal':   ahOnGoal(msg); break;
-    case 'ah_serve':  ahOnServe(msg); break;
+    case 'ah_ready':      ahOnReady(); break;
+    case 'ah_paddle':     ahOnPaddle(msg); break;
+    case 'ah_puck_sync':  ahOnPuck(msg); break;
+    case 'ah_puck_enter': ahOnPuckEnter(msg); break;
+    case 'ah_goal':       ahOnGoal(msg); break;
   }
 }
 
@@ -1072,31 +1101,80 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+
 // ═══════════════════════════════════════════
-//  AIR HOCKEY
+//  AIR HOCKEY — campo continuo BOTTOM→TOP
+//
+//  Disposizione fisica (come disegno):
+//
+//  ┌──────────────┐
+//  │ 🔴 porta rossa (TOP telefono 1 = HOST)
+//  │   paddle HOST
+//  │         ○ disco scende...
+//  └──────────────┘  ← bordo BASSO telefono 1
+//  ┌──────────────┐  ← bordo ALTO telefono 2
+//  │         ○ ...entra qui
+//  │   paddle GUEST
+//  │ 🔵 porta blu (BOTTOM telefono 2 = GUEST)
+//  └──────────────┘
+//
+//  HOST  = telefono 1 (sopra): porta in CIMA (y=0),  paddle in basso
+//  GUEST = telefono 2 (sotto): porta in FONDO (y=CH), paddle in alto (suo punto di vista)
+//
+//  Il disco esce dal BASSO (y>CH) del telefono 1
+//  ed entra dall'ALTO (y=0)  del telefono 2 con stessa vx e vy.
+//  NON si invertono le coordinate — il campo è continuo.
 // ═══════════════════════════════════════════
 const AH_WIN = 5;
-let ahScores = {me:0, opp:0};
+let ahScores   = {me:0, opp:0};
 let ahServingMe = true;
-let ahActive = false;
+let ahActive   = false;
 let ahAnimFrame = null;
-let ahPuck = {x:0, y:0, vx:0, vy:0, r:22};
-let ahMyPaddle  = {x:0, y:0, r:32, tx:0, ty:0};
-let ahOppPaddle = {x:0, y:0, r:32};
+let ahReady    = false;
+let ahOppReady = false;
 let ahCW=0, ahCH=0, ahCtx=null;
 let ahDragging=false;
 let ahPaddleVel={x:0,y:0};
 let ahLastPaddleT=0;
 let ahInTransit=false;
 let ahGoalBusy=false;
+let ahPuck = {x:0,y:0,vx:0,vy:0,r:20};
+let ahMyPaddle  = {x:0,y:0,r:34,tx:0,ty:0};
+let ahOppPaddle = {x:0,y:0,r:34};
 
+// ─── SETUP ───────────────────────────────
 function startAirHockey() {
+  ahReady=false; ahOppReady=false;
+  const btn=$('ahReadyBtn');
+  if(btn){btn.disabled=false;btn.textContent='✓ SONO PRONTO';btn.style.opacity='1';}
+  const lbl=$('ahWaitLbl');
+  if(lbl)lbl.textContent='Aspetta che anche l\'avversario sia pronto...';
+  ss('airhSetup');
+}
+
+function ahConfirmReady() {
+  ahReady=true;
+  const btn=$('ahReadyBtn');
+  if(btn){btn.disabled=true;btn.textContent='✓ PRONTO!';btn.style.opacity='.6';}
+  const lbl=$('ahWaitLbl');
+  if(lbl)lbl.textContent='Tu sei pronto ✓ — aspetto avversario...';
+  gMsg({type:'ah_ready'});
+  ahCheckBothReady();
+}
+
+function ahCheckBothReady() {
+  if(!ahReady||!ahOppReady) return;
+  const lbl=$('ahWaitLbl');
+  if(lbl)lbl.textContent='🏒 SI PARTE!';
+  setTimeout(ahInitGame,700);
+}
+
+// ─── INIT ─────────────────────────────────
+function ahInitGame() {
   ss('airh');
   ahScores={me:0,opp:0};
-  ahServingMe=isHost;
-  ahActive=true;
-  ahInTransit=false;
-  ahGoalBusy=false;
+  ahServingMe=isHost;   // HOST serve per primo
+  ahActive=true; ahInTransit=false; ahGoalBusy=false;
   cancelAnimationFrame(ahAnimFrame);
 
   const canvas=$('ahCanvas'), rink=$('ahRink');
@@ -1104,54 +1182,103 @@ function startAirHockey() {
   canvas.width=ahCW; canvas.height=ahCH;
   ahCtx=canvas.getContext('2d');
 
-  ahMyPaddle  ={x:ahCW/2,y:ahCH*.82,r:32,tx:ahCW/2,ty:ahCH*.82};
-  ahOppPaddle ={x:ahCW/2,y:ahCH*.18,r:32};
+  // HOST (isHost=true): porta in CIMA (y≈0), paddle nella metà BASSA
+  // GUEST (isHost=false): porta in FONDO (y≈CH), paddle nella metà ALTA
+  if(isHost){
+    ahMyPaddle={x:ahCW/2,y:ahCH*0.78,r:34,tx:ahCW/2,ty:ahCH*0.78};
+  } else {
+    ahMyPaddle={x:ahCW/2,y:ahCH*0.22,r:34,tx:ahCW/2,ty:ahCH*0.22};
+  }
+  ahOppPaddle={x:ahCW/2,y:isHost?ahCH*0.22:ahCH*0.78,r:34};
 
-  const pa=Object.values(players), opp=pa.find(p=>p.id!==myId);
+  const opp=Object.values(players).find(p=>p.id!==myId);
   $('ahMyName').textContent  = myName||'TU';
   $('ahOppName').textContent = opp?.name||'AVVERSARIO';
+  $('ahMyName').style.color  = isHost?'#ff3355':'#00aaff';
+  $('ahOppName').style.color = isHost?'#00aaff':'#ff3355';
 
+  // Colora le porte in base al ruolo
+  const topGoalEl=$('ahTopGoalBar'), botGoalEl=$('ahBotGoalBar');
+  if(isHost){
+    // HOST: porta rossa in cima, porta blu avversario in fondo
+    if(topGoalEl)topGoalEl.style.background='rgba(255,51,85,.7)';
+    if(botGoalEl)botGoalEl.style.background='rgba(0,170,255,.7)';
+  } else {
+    // GUEST: porta blu in fondo, porta rossa avversario in cima
+    if(topGoalEl)topGoalEl.style.background='rgba(255,51,85,.7)';
+    if(botGoalEl)botGoalEl.style.background='rgba(0,170,255,.7)';
+  }
+
+  ahUpdateUI();
   ahServePuck();
   ahSetupInput();
   ahLoop();
 }
 
+// ─── SERVE ───────────────────────────────
 function ahServePuck() {
   ahUpdateUI();
   ahInTransit=false;
+  // Chi serve: disco nella sua metà, velocità verso il centro poi avversario
   if(ahServingMe){
-    ahPuck={x:ahCW/2,y:ahCH*.72,vx:0,vy:0,r:22};
-    fx('🏒 TUO SERVIZIO!','#00aaff');
+    if(isHost){
+      // HOST serve: disco parte in basso (sua metà), vy negativa = va verso la sua porta (cima)
+      // Quindi il disco sale verso la porta AVVERSARIA (basso per l'avversario)
+      // ASPETTA — l'HOST ha la porta in CIMA. Il disco deve andare VERSO LA PORTA AVVERSARIA
+      // = verso il basso = vy positiva
+      ahPuck={x:ahCW/2,y:ahCH*0.65,vx:(Math.random()-.5)*3,vy:3,r:20};
+    } else {
+      // GUEST serve: disco parte in alto (sua metà), vy positiva = va verso il basso (sua porta)
+      // Quindi il disco deve andare verso la porta AVVERSARIA = verso l'alto = vy negativa
+      ahPuck={x:ahCW/2,y:ahCH*0.35,vx:(Math.random()-.5)*3,vy:-3,r:20};
+    }
     $('ahMyServe').textContent='🏒 SERVI TU';
     $('ahOppServe').textContent='';
+    fx('🏒 TUO SERVIZIO','#00aaff');
   } else {
-    ahPuck={x:ahCW/2,y:ahCH*.28,vx:0,vy:0,r:22};
-    fx('🏒 SERVIZIO AVVERSARIO','#ff3355');
+    // Avversario serve — disco appare nel campo (sync arriverà)
+    if(isHost){
+      ahPuck={x:ahCW/2,y:ahCH*0.35,vx:0,vy:3,r:20};
+    } else {
+      ahPuck={x:ahCW/2,y:ahCH*0.65,vx:0,vy:-3,r:20};
+    }
     $('ahMyServe').textContent='';
-    $('ahOppServe').textContent='🏒 SERVE LUI';
+    $('ahOppServe').textContent='🏒 AVVERSARIO SERVE';
+    fx('🏒 AVVERSARIO SERVE','#ff3355');
   }
 }
 
-function ahSetupInput() {
-  const rink=$('ahRink'); if(!rink)return;
-  rink.addEventListener('touchstart',ahTS,{passive:false});
-  rink.addEventListener('touchmove', ahTM,{passive:false});
-  rink.addEventListener('touchend',  ()=>ahDragging=false,{passive:false});
-  rink.addEventListener('mousedown', e=>{ahDragging=true;ahMove(ahPos(e));});
-  rink.addEventListener('mousemove', e=>{if(ahDragging)ahMove(ahPos(e));});
-  rink.addEventListener('mouseup',   ()=>ahDragging=false);
+// ─── INPUT ────────────────────────────────
+function ahSetupInput(){
+  const r=$('ahRink');if(!r)return;
+  r.addEventListener('touchstart',ahTS,{passive:false});
+  r.addEventListener('touchmove', ahTM,{passive:false});
+  r.addEventListener('touchend',  ()=>ahDragging=false,{passive:false});
+  r.addEventListener('mousedown', e=>{ahDragging=true;ahMoveP(ahPos(e));});
+  r.addEventListener('mousemove', e=>{if(ahDragging)ahMoveP(ahPos(e));});
+  r.addEventListener('mouseup',   ()=>ahDragging=false);
 }
-function ahTeardownInput() {
-  const rink=$('ahRink'); if(!rink)return;
-  rink.removeEventListener('touchstart',ahTS);
-  rink.removeEventListener('touchmove',ahTM);
+function ahTeardownInput(){
+  const r=$('ahRink');if(!r)return;
+  r.removeEventListener('touchstart',ahTS);
+  r.removeEventListener('touchmove',ahTM);
 }
-function ahTS(e){e.preventDefault();ahDragging=true;ahMove(ahPos(e));}
-function ahTM(e){e.preventDefault();if(ahDragging)ahMove(ahPos(e));}
-function ahPos(e){const r=$('ahCanvas').getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
-function ahMove(p){
-  const minY=ahCH/2+ahMyPaddle.r+4,maxY=ahCH-ahMyPaddle.r-4;
-  const minX=ahMyPaddle.r+4,maxX=ahCW-ahMyPaddle.r-4;
+function ahTS(e){e.preventDefault();ahDragging=true;ahMoveP(ahPos(e));}
+function ahTM(e){e.preventDefault();if(ahDragging)ahMoveP(ahPos(e));}
+function ahPos(e){
+  const rect=$('ahCanvas').getBoundingClientRect(),t=e.touches?e.touches[0]:e;
+  return{x:t.clientX-rect.left,y:t.clientY-rect.top};
+}
+function ahMoveP(p){
+  // HOST paddle confinato nella metà BASSA (lontano dalla sua porta in cima)
+  // GUEST paddle confinato nella metà ALTA (lontano dalla sua porta in fondo)
+  let minY,maxY;
+  if(isHost){
+    minY=ahCH*0.5+ahMyPaddle.r; maxY=ahCH-ahMyPaddle.r-4;
+  } else {
+    minY=ahMyPaddle.r+4; maxY=ahCH*0.5-ahMyPaddle.r;
+  }
+  const minX=ahMyPaddle.r+4, maxX=ahCW-ahMyPaddle.r-4;
   const now=Date.now(),dt=Math.max(1,now-ahLastPaddleT);
   ahPaddleVel.x=(p.x-ahMyPaddle.x)/dt*16;
   ahPaddleVel.y=(p.y-ahMyPaddle.y)/dt*16;
@@ -1160,7 +1287,8 @@ function ahMove(p){
   ahMyPaddle.ty=Math.max(minY,Math.min(maxY,p.y));
 }
 
-function ahLoop() {
+// ─── GAME LOOP ────────────────────────────
+function ahLoop(){
   if(!ahActive)return;
   ahUpdate();
   ahDraw();
@@ -1168,56 +1296,88 @@ function ahLoop() {
   ahAnimFrame=requestAnimationFrame(ahLoop);
 }
 
-function ahUpdate() {
+// ─── UPDATE ───────────────────────────────
+function ahUpdate(){
   if(ahInTransit)return;
-  ahMyPaddle.x+=(ahMyPaddle.tx-ahMyPaddle.x)*.38;
-  ahMyPaddle.y+=(ahMyPaddle.ty-ahMyPaddle.y)*.38;
+  ahMyPaddle.x+=(ahMyPaddle.tx-ahMyPaddle.x)*0.4;
+  ahMyPaddle.y+=(ahMyPaddle.ty-ahMyPaddle.y)*0.4;
   ahPuck.x+=ahPuck.vx; ahPuck.y+=ahPuck.vy;
-  ahPuck.vx*=.994; ahPuck.vy*=.994;
+  ahPuck.vx*=0.999; ahPuck.vy*=0.999;
 
-  // Side walls
-  if(ahPuck.x-ahPuck.r<0){ahPuck.x=ahPuck.r;ahPuck.vx=Math.abs(ahPuck.vx);ahWall();vib(18);}
-  if(ahPuck.x+ahPuck.r>ahCW){ahPuck.x=ahCW-ahPuck.r;ahPuck.vx=-Math.abs(ahPuck.vx);ahWall();vib(18);}
+  // ── PARETI LATERALI ──
+  if(ahPuck.x-ahPuck.r<0){ahPuck.x=ahPuck.r;ahPuck.vx=Math.abs(ahPuck.vx);ahWallSnd();vib(15);}
+  if(ahPuck.x+ahPuck.r>ahCW){ahPuck.x=ahCW-ahPuck.r;ahPuck.vx=-Math.abs(ahPuck.vx);ahWallSnd();vib(15);}
 
-  const gw=ahCW*.4,gx1=(ahCW-gw)/2,gx2=gx1+gw;
+  const GW=ahCW*0.4, GX1=(ahCW-GW)/2, GX2=GX1+GW;
 
-  // Top exit → opponent net (I scored)
-  if(ahPuck.y-ahPuck.r<0){
-    if(ahPuck.x>gx1&&ahPuck.x<gx2){ahGoal(false);}
-    else{ahPuck.y=ahPuck.r;ahPuck.vy=Math.abs(ahPuck.vy);ahWall();vib(18);}
-    return;
+  if(isHost){
+    // HOST: la sua porta è in CIMA (y=0)
+    // Disco esce dal BASSO → va al GUEST (entra dall'alto del guest)
+    if(ahPuck.y+ahPuck.r>ahCH){
+      // Esce dal basso — passa al telefono sotto (GUEST)
+      ahInTransit=true;
+      // Il disco continua nel campo del GUEST con le STESSE coordinate
+      // Per il GUEST, il disco entra dall'alto (y piccola), vy positiva (va verso il basso)
+      gMsg({type:'ah_puck_enter',
+        nx: ahPuck.x/ahCW,
+        ny: 0.02,                  // entra dall'alto del GUEST
+        nvx: ahPuck.vx/ahCW,
+        nvy: Math.abs(ahPuck.vy)/ahCH  // vy positiva = scende nel campo del GUEST
+      });
+      ahPuck.y=-999; return;
+    }
+    // Disco torna in alto — GOL nella porta HOST (in cima)
+    if(ahPuck.y-ahPuck.r<0){
+      if(ahPuck.x>GX1&&ahPuck.x<GX2){ahHandleGoal(true);}  // gol nella mia porta
+      else{ahPuck.y=ahPuck.r;ahPuck.vy=Math.abs(ahPuck.vy);ahWallSnd();vib(15);}
+      return;
+    }
+  } else {
+    // GUEST: la sua porta è in FONDO (y=CH)
+    // Disco esce dall'ALTO → va al HOST (entra dal basso dell'HOST)
+    if(ahPuck.y-ahPuck.r<0){
+      ahInTransit=true;
+      gMsg({type:'ah_puck_enter',
+        nx: ahPuck.x/ahCW,
+        ny: 0.98,                  // entra dal basso dell'HOST
+        nvx: ahPuck.vx/ahCW,
+        nvy: -Math.abs(ahPuck.vy)/ahCH  // vy negativa = sale nel campo HOST
+      });
+      ahPuck.y=-999; return;
+    }
+    // Disco scende in fondo — GOL nella porta GUEST (in fondo)
+    if(ahPuck.y+ahPuck.r>ahCH){
+      if(ahPuck.x>GX1&&ahPuck.x<GX2){ahHandleGoal(true);}  // gol nella mia porta
+      else{ahPuck.y=ahCH-ahPuck.r;ahPuck.vy=-Math.abs(ahPuck.vy);ahWallSnd();vib(15);}
+      return;
+    }
   }
-  // Bottom exit → my net (opponent scored)
-  if(ahPuck.y+ahPuck.r>ahCH){
-    if(ahPuck.x>gx1&&ahPuck.x<gx2){ahGoal(true);}
-    else{ahPuck.y=ahCH-ahPuck.r;ahPuck.vy=-Math.abs(ahPuck.vy);ahWall();vib(18);}
-    return;
-  }
 
-  ahCollide(ahMyPaddle,true);
-  ahCollide(ahOppPaddle,false);
+  ahCollidePaddle(ahMyPaddle,true);
+  ahCollidePaddle(ahOppPaddle,false);
 }
 
-function ahCollide(pad,isMe) {
-  const dx=ahPuck.x-pad.x,dy=ahPuck.y-pad.y;
-  const dist=Math.sqrt(dx*dx+dy*dy),minD=ahPuck.r+pad.r;
-  if(dist<minD&&dist>0){
-    const nx=dx/dist,ny=dy/dist,ov=minD-dist;
+function ahCollidePaddle(pad,isMe){
+  const dx=ahPuck.x-pad.x, dy=ahPuck.y-pad.y;
+  const dist=Math.sqrt(dx*dx+dy*dy), minD=ahPuck.r+pad.r;
+  if(dist<minD&&dist>0.001){
+    const nx=dx/dist, ny=dy/dist, ov=minD-dist;
     ahPuck.x+=nx*ov; ahPuck.y+=ny*ov;
     const dot=ahPuck.vx*nx+ahPuck.vy*ny;
     ahPuck.vx-=2*dot*nx; ahPuck.vy-=2*dot*ny;
-    if(isMe){ahPuck.vx+=ahPaddleVel.x*.55;ahPuck.vy+=ahPaddleVel.y*.55;}
+    if(isMe){ahPuck.vx+=ahPaddleVel.x*0.6;ahPuck.vy+=ahPaddleVel.y*0.6;}
     const spd=Math.sqrt(ahPuck.vx**2+ahPuck.vy**2);
-    if(spd>24){ahPuck.vx=ahPuck.vx/spd*24;ahPuck.vy=ahPuck.vy/spd*24;}
-    ahHit(); if(isMe){vib(22);gMsg({type:'ah_puck',x:ahPuck.x/ahCW,y:ahPuck.y/ahCH,vx:ahPuck.vx/ahCW,vy:ahPuck.vy/ahCH});}
+    if(spd>22){ahPuck.vx=ahPuck.vx/spd*22;ahPuck.vy=ahPuck.vy/spd*22;}
+    if(Math.abs(ahPuck.vy)<1.5)ahPuck.vy=ahPuck.vy>0?2:-2;
+    ahHitSnd();
+    if(isMe){vib(25);gMsg({type:'ah_puck_sync',x:ahPuck.x/ahCW,y:ahPuck.y/ahCH,vx:ahPuck.vx/ahCW,vy:ahPuck.vy/ahCH});}
   }
 }
 
-function ahGoal(oppScored) {
+// ─── GOAL ─────────────────────────────────
+function ahHandleGoal(oppScored){
   if(ahInTransit||ahGoalBusy)return;
-  ahInTransit=true; ahGoalBusy=true;
-  ahActive=false; cancelAnimationFrame(ahAnimFrame);
-
+  ahInTransit=true; ahGoalBusy=true; ahActive=false; cancelAnimationFrame(ahAnimFrame);
   if(oppScored){
     ahScores.opp++;
     ahFlash('🥅 GOL!','#ff3355');
@@ -1231,29 +1391,20 @@ function ahGoal(oppScored) {
     gMsg({type:'ah_goal',scorer:'me'});
   }
   ahUpdateUI();
-
-  if(ahScores.me>=AH_WIN||ahScores.opp>=AH_WIN){
-    setTimeout(()=>ahEndGame(),1600); return;
-  }
+  if(ahScores.me>=AH_WIN||ahScores.opp>=AH_WIN){setTimeout(ahEndGame,1600);return;}
   ahServingMe=!oppScored;
-  setTimeout(()=>{
-    ahGoalBusy=false; ahActive=true;
-    ahServePuck();
-    gMsg({type:'ah_serve',x:ahPuck.x/ahCW,y:ahPuck.y/ahCH,servingMe:ahServingMe});
-    ahLoop();
-  },2000);
+  setTimeout(()=>{ahGoalBusy=false;ahActive=true;ahServePuck();ahLoop();},2200);
 }
 
-function ahFlash(txt,color) {
-  const f=$('ahGoalFlash'),t=$('ahGoalTxt');
-  if(!f||!t)return;
-  t.textContent=txt; t.style.color=color;
-  f.classList.add('show');
-  setTimeout(()=>f.classList.remove('show'),1200);
+function ahFlash(txt,color){
+  const f=$('ahGoalFlash'),t=$('ahGoalTxt');if(!f||!t)return;
+  t.textContent=txt;t.style.color=color;
+  f.style.display='flex';f.style.opacity='1';
+  setTimeout(()=>{f.style.opacity='0';setTimeout(()=>f.style.display='none',300);},1300);
 }
 
-function ahEndGame() {
-  ahActive=false; ahTeardownInput(); cancelAnimationFrame(ahAnimFrame);
+function ahEndGame(){
+  ahActive=false;ahTeardownInput();cancelAnimationFrame(ahAnimFrame);
   myScore=ahScores.me;
   if(players[myId])players[myId].score=ahScores.me;
   const opp=Object.values(players).find(p=>p.id!==myId);
@@ -1263,120 +1414,176 @@ function ahEndGame() {
   showResults();
 }
 
-// Incoming msgs
-function ahOnPaddle(m){ahOppPaddle.x=m.x*ahCW;ahOppPaddle.y=(1-m.y)*ahCH;}
-function ahOnPuck(m){ahPuck.x=m.x*ahCW;ahPuck.y=(1-m.y)*ahCH;ahPuck.vx=m.vx*ahCW;ahPuck.vy=-m.vy*ahCH;}
+// ─── MESSAGGI IN ARRIVO ───────────────────
+function ahOnPaddle(m){
+  // Paddle avversario: coordinate normalizzate
+  // L'avversario è "dall'altra parte" — specchio Y rispetto al campo continuo
+  ahOppPaddle.x=m.x*ahCW;
+  // HOST vede il GUEST "in alto" → specchio Y: guest y=0.2 → appare a 0.8*CH per host
+  // GUEST vede l'HOST "in basso" → specchio Y: host y=0.8 → appare a 0.2*CH per guest
+  ahOppPaddle.y=(1-m.y)*ahCH;
+}
+
+function ahOnPuck(m){
+  // Sync puck dopo un colpo — stesso campo continuo
+  // L'avversario manda coordinate nel suo spazio → specchio Y
+  ahPuck.x= m.x*ahCW;
+  ahPuck.y=(1-m.y)*ahCH;
+  ahPuck.vx= m.vx*ahCW;
+  ahPuck.vy=-m.vy*ahCH;  // inverto vy: il suo "su" è il mio "giù"
+}
+
+function ahOnPuckEnter(m){
+  // Il disco arriva dal campo avversario
+  ahInTransit=false;
+  ahPuck.x=m.nx*ahCW;
+  ahPuck.y=m.ny*ahCH;
+  ahPuck.vx=m.nvx*ahCW;
+  ahPuck.vy=m.nvy*ahCH;
+}
+
 function ahOnGoal(m){
-  if(m.scorer==='me'){ahScores.opp++;ahFlash('🥅 GOL!','#ff3355');tone(150,'sawtooth',.4,.5);vib([150,80,150]);}
-  else{ahScores.me++;ahFlash('⚡ GOL!','#00aaff');[440,554,659,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.2,.4),i*80));vib([80,40,200]);}
+  if(m.scorer==='me'){
+    ahScores.opp++;ahFlash('🥅 GOL!','#ff3355');tone(150,'sawtooth',.4,.5);vib([150,80,150]);
+  } else {
+    ahScores.me++;ahFlash('⚡ GOL!','#00aaff');[440,554,659,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.2,.4),i*80));vib([80,40,200]);
+  }
   ahUpdateUI();
   ahServingMe=(m.scorer==='opp');
 }
-function ahOnServe(m){ahPuck.x=m.x*ahCW;ahPuck.y=(1-m.y)*ahCH;ahPuck.vx=0;ahPuck.vy=0;ahInTransit=false;}
 
+function ahOnReady(){
+  ahOppReady=true;
+  const lbl=$('ahWaitLbl');
+  if(lbl)lbl.textContent='Avversario pronto ✓';
+  ahCheckBothReady();
+}
+
+// ─── UI ───────────────────────────────────
 function ahUpdateUI(){
   const ms=$('ahMyScore'),os=$('ahOppScore');
   if(ms)ms.textContent=ahScores.me;
   if(os)os.textContent=ahScores.opp;
-  ahPips($('ahMyPips'),ahScores.me,'#00aaff');
-  ahPips($('ahOppPips'),ahScores.opp,'#ff3355');
+  ahPips($('ahMyPips'), ahScores.me, isHost?'#ff3355':'#00aaff');
+  ahPips($('ahOppPips'),ahScores.opp,isHost?'#00aaff':'#ff3355');
 }
 function ahPips(el,score,color){
-  if(!el)return; el.innerHTML='';
+  if(!el)return;el.innerHTML='';
   for(let i=0;i<AH_WIN;i++){
     const d=document.createElement('div');
     d.className='ah-pip'+(i<score?' on':'');
-    if(i<score)d.style.color=color;
+    d.style.cssText=`width:10px;height:10px;border-radius:50%;display:inline-block;margin:0 2px;background:${i<score?color:'rgba(255,255,255,.15)'};${i<score?'box-shadow:0 0 6px '+color:''}`;
     el.appendChild(d);
   }
 }
 
-function ahHit() {tone(280,'square',.06,.5);}
-function ahWall(){tone(160,'sine',.08,.3);}
+// ─── SUONI ────────────────────────────────
+function ahHitSnd() {tone(280,'square',.06,.5);}
+function ahWallSnd(){tone(160,'sine',.08,.3);}
 
+// ─── DRAW ─────────────────────────────────
 function ahDraw(){
   if(!ahCtx)return;
   const c=ahCtx,W=ahCW,H=ahCH;
   c.clearRect(0,0,W,H);
 
-  // Ice
+  // Sfondo ghiaccio
   const ig=c.createLinearGradient(0,0,0,H);
-  ig.addColorStop(0,'#091520');ig.addColorStop(.5,'#0c1e30');ig.addColorStop(1,'#091520');
+  ig.addColorStop(0,'#091825');ig.addColorStop(.5,'#0d2035');ig.addColorStop(1,'#091825');
   c.fillStyle=ig;c.fillRect(0,0,W,H);
 
-  // Grid
-  c.strokeStyle='rgba(255,255,255,.03)';c.lineWidth=1;
-  for(let y=0;y<H;y+=20){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  // Righe ghiaccio sottili
+  c.strokeStyle='rgba(200,230,255,.035)';c.lineWidth=1;
+  for(let y=0;y<H;y+=24){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
 
-  // Center line
-  c.setLineDash([14,8]);c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=2.5;
-  c.beginPath();c.moveTo(0,H/2);c.lineTo(W,H/2);c.stroke();c.setLineDash([]);
-
-  // Center circle
-  c.strokeStyle='rgba(255,255,255,.14)';c.lineWidth=2;
-  c.beginPath();c.arc(W/2,H/2,Math.min(W,H)*.13,0,Math.PI*2);c.stroke();
-  c.fillStyle='rgba(255,255,255,.28)';c.beginPath();c.arc(W/2,H/2,5,0,Math.PI*2);c.fill();
-
-  const gw=W*.4,gh=14,gx=(W-gw)/2;
-
-  // Zone tints
+  // Tinte campo
+  // In alto: zona avversario HOST o GUEST
+  const topColor=isHost?'rgba(255,51,85,.06)':'rgba(0,170,255,.06)';
+  const botColor=isHost?'rgba(0,170,255,.06)':'rgba(255,51,85,.06)';
   const tz=c.createLinearGradient(0,0,0,H/2);
-  tz.addColorStop(0,'rgba(255,51,85,.07)');tz.addColorStop(1,'transparent');
+  tz.addColorStop(0,topColor);tz.addColorStop(1,'transparent');
   c.fillStyle=tz;c.fillRect(0,0,W,H/2);
   const bz=c.createLinearGradient(0,H/2,0,H);
-  bz.addColorStop(0,'transparent');bz.addColorStop(1,'rgba(0,170,255,.07)');
+  bz.addColorStop(0,'transparent');bz.addColorStop(1,botColor);
   c.fillStyle=bz;c.fillRect(0,H/2,W,H/2);
 
-  // Top goal (opp - red)
-  const tg=c.createLinearGradient(gx,0,gx+gw,0);
-  tg.addColorStop(0,'rgba(255,51,85,0)');tg.addColorStop(.5,'rgba(255,51,85,.8)');tg.addColorStop(1,'rgba(255,51,85,0)');
-  c.fillStyle=tg;c.fillRect(gx,0,gw,gh);
-  c.strokeStyle='rgba(255,51,85,.7)';c.lineWidth=3;
-  c.beginPath();c.moveTo(gx,gh);c.lineTo(gx,0);c.lineTo(gx+gw,0);c.lineTo(gx+gw,gh);c.stroke();
+  // Cerchio centrocampo
+  c.strokeStyle='rgba(255,255,255,.12)';c.lineWidth=2;
+  c.beginPath();c.arc(W/2,H/2,Math.min(W,H)*.12,0,Math.PI*2);c.stroke();
+  c.fillStyle='rgba(255,255,255,.25)';c.beginPath();c.arc(W/2,H/2,5,0,Math.PI*2);c.fill();
 
-  // Bottom goal (me - blue)
-  const bg=c.createLinearGradient(gx,H-gh,gx+gw,H);
-  bg.addColorStop(0,'rgba(0,170,255,0)');bg.addColorStop(.5,'rgba(0,170,255,.8)');bg.addColorStop(1,'rgba(0,170,255,0)');
-  c.fillStyle=bg;c.fillRect(gx,H-gh,gw,gh);
-  c.strokeStyle='rgba(0,170,255,.7)';c.lineWidth=3;
-  c.beginPath();c.moveTo(gx,H-gh);c.lineTo(gx,H);c.lineTo(gx+gw,H);c.lineTo(gx+gw,H-gh);c.stroke();
+  // Linea centrale tratteggiata
+  c.setLineDash([12,8]);c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=2;
+  c.beginPath();c.moveTo(0,H/2);c.lineTo(W,H/2);c.stroke();c.setLineDash([]);
 
-  // Paddles
+  const GW=W*0.4,GH=16,GX=(W-GW)/2;
+
+  // ── PORTA IN ALTO ──
+  // HOST: sua porta (rossa) | GUEST: porta avversario (rossa)
+  const topGoalColor=isHost?'#ff3355':'#ff3355'; // sempre rossa in alto
+  const topGrad=c.createLinearGradient(GX,0,GX+GW,0);
+  topGrad.addColorStop(0,'rgba(255,51,85,0)');topGrad.addColorStop(.5,'rgba(255,51,85,.85)');topGrad.addColorStop(1,'rgba(255,51,85,0)');
+  c.fillStyle=topGrad;c.fillRect(GX,0,GW,GH);
+  c.strokeStyle='rgba(255,51,85,.8)';c.lineWidth=3;
+  c.shadowColor='#ff3355';c.shadowBlur=14;
+  c.beginPath();c.moveTo(GX,GH);c.lineTo(GX,1);c.lineTo(GX+GW,1);c.lineTo(GX+GW,GH);c.stroke();
+  c.shadowBlur=0;
+  // Label porta in alto
+  c.fillStyle='rgba(255,51,85,.5)';c.font='bold 10px "DM Mono"';c.textAlign='center';
+  c.fillText(isHost?'🥅 TUA PORTA':'🥅 PORTA AVVERSARIO',W/2,GH+12);
+
+  // ── PORTA IN BASSO ──
+  // HOST: porta avversario (blu) | GUEST: sua porta (blu)
+  const botGrad=c.createLinearGradient(GX,H-GH,GX+GW,H);
+  botGrad.addColorStop(0,'rgba(0,170,255,0)');botGrad.addColorStop(.5,'rgba(0,170,255,.85)');botGrad.addColorStop(1,'rgba(0,170,255,0)');
+  c.fillStyle=botGrad;c.fillRect(GX,H-GH,GW,GH);
+  c.strokeStyle='rgba(0,170,255,.8)';c.lineWidth=3;
+  c.shadowColor='#00aaff';c.shadowBlur=14;
+  c.beginPath();c.moveTo(GX,H-GH);c.lineTo(GX,H-1);c.lineTo(GX+GW,H-1);c.lineTo(GX+GW,H-GH);c.stroke();
+  c.shadowBlur=0;
+  c.fillStyle='rgba(0,170,255,.5)';c.font='bold 10px "DM Mono"';c.textAlign='center';
+  c.fillText(isHost?'🥅 PORTA AVVERSARIO':'🥅 TUA PORTA',W/2,H-GH-6);
+
+  // ── PADDLE AVVERSARIO ──
   ahDrawPad(ahOppPaddle.x,ahOppPaddle.y,ahOppPaddle.r,'#ff3355','#ff7788');
-  ahDrawPad(ahMyPaddle.x, ahMyPaddle.y, ahMyPaddle.r, '#00aaff','#44ccff');
 
-  // Puck
-  if(!ahInTransit)ahDrawPuck();
+  // ── PADDLE MIO ──
+  const myC=isHost?'#ff3355':'#00aaff', myC2=isHost?'#ff7788':'#44ccff';
+  ahDrawPad(ahMyPaddle.x,ahMyPaddle.y,ahMyPaddle.r,myC,myC2);
+
+  // ── PUCK ──
+  if(!ahInTransit&&ahPuck.y>-50)ahDrawPuck();
 }
 
 function ahDrawPad(x,y,r,ca,cb){
   const c=ahCtx;
-  c.save();c.shadowColor=ca;c.shadowBlur=22;
-  const g=c.createRadialGradient(x-r*.3,y-r*.3,r*.1,x,y,r);
+  c.save();c.shadowColor=ca;c.shadowBlur=24;
+  const g=c.createRadialGradient(x-r*.3,y-r*.3,r*.08,x,y,r);
   g.addColorStop(0,cb);g.addColorStop(1,ca);
   c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();
   c.shadowBlur=0;
-  c.fillStyle='rgba(255,255,255,.15)';c.beginPath();c.arc(x-r*.2,y-r*.25,r*.25,0,Math.PI*2);c.fill();
-  c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=2.5;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.stroke();
-  c.strokeStyle='rgba(255,255,255,.12)';c.lineWidth=1;c.beginPath();c.arc(x,y,r*.6,0,Math.PI*2);c.stroke();
+  c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.arc(x-r*.22,y-r*.26,r*.28,0,Math.PI*2);c.fill();
+  c.strokeStyle='rgba(255,255,255,.4)';c.lineWidth=2.5;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.stroke();
+  c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;c.beginPath();c.arc(x,y,r*.55,0,Math.PI*2);c.stroke();
   c.restore();
 }
 
 function ahDrawPuck(){
   const c=ahCtx,p=ahPuck;
-  c.save();c.shadowColor='rgba(255,255,255,.35)';c.shadowBlur=14;
-  const g=c.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,p.r*.05,p.x,p.y,p.r);
-  g.addColorStop(0,'#666');g.addColorStop(1,'#111');
+  c.save();
+  c.shadowColor='rgba(255,255,255,.4)';c.shadowBlur=16;
+  const g=c.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,p.r*.04,p.x,p.y,p.r);
+  g.addColorStop(0,'#777');g.addColorStop(1,'#111');
   c.fillStyle=g;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fill();
   c.shadowBlur=0;
-  c.fillStyle='rgba(255,255,255,.2)';c.beginPath();c.arc(p.x-p.r*.25,p.y-p.r*.3,p.r*.3,0,Math.PI*2);c.fill();
-  c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.stroke();
-  // Speed trail
+  c.fillStyle='rgba(255,255,255,.22)';c.beginPath();c.arc(p.x-p.r*.25,p.y-p.r*.28,p.r*.32,0,Math.PI*2);c.fill();
+  c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.stroke();
   const spd=Math.sqrt(p.vx**2+p.vy**2);
-  if(spd>3){
-    for(let i=1;i<=4;i++){
-      const tx=p.x-(p.vx/spd)*p.r*i*.5,ty=p.y-(p.vy/spd)*p.r*i*.5,tr=p.r*(1-i*.22)*.7;
-      if(tr>0){c.fillStyle=`rgba(255,255,255,${Math.min(.4,spd/28)*(1-i*.2)})`;c.beginPath();c.arc(tx,ty,tr,0,Math.PI*2);c.fill();}
+  if(spd>2){
+    const al=Math.min(.5,spd/20);
+    for(let i=1;i<=5;i++){
+      const tx=p.x-(p.vx/spd)*p.r*i*.45,ty=p.y-(p.vy/spd)*p.r*i*.45,tr=p.r*(1-i*.18)*.65;
+      if(tr>0){c.fillStyle=`rgba(255,255,255,${al*(1-i*.18)})`;c.beginPath();c.arc(tx,ty,tr,0,Math.PI*2);c.fill();}
     }
   }
   c.restore();
