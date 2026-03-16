@@ -8,16 +8,17 @@
 <script src="/socket.io/socket.io.js"></script>
 <style>
 :root {
-  --bg:#060608;--s1:#0e0e16;--s2:#161622;
+  --bg:#060608;--s1:#0e0e16;--s2:#161622;--s3:#1e1e2e;--pk:#ff69b4;
   --r:#ff2752;--b:#00e5ff;--y:#ffe600;--g:#00ff88;--o:#ff7a00;--p:#cc44ff;
   --w:#f0f0ff;--dim:#44445a;
   --fd:'Bebas Neue',sans-serif;--fu:'Unbounded',sans-serif;--fm:'DM Mono',monospace;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+html,body{touch-action:pan-y;}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--w);font-family:var(--fu);}
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.5;}
 
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;transition:opacity .3s,transform .3s;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:opacity .3s,transform .3s;touch-action:pan-y;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.96);}
 
 /* HOME */
@@ -37,7 +38,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .mc-desc{font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:3px;font-family:var(--fm);}
 
 /* BUTTONS */
-.btn{border:none;border-radius:6px;font-family:var(--fd);font-size:20px;letter-spacing:3px;cursor:pointer;padding:15px 20px;width:100%;position:relative;overflow:hidden;transition:transform .12s,box-shadow .2s;}
+.btn{border:none;border-radius:6px;font-family:var(--fd);font-size:20px;letter-spacing:3px;cursor:pointer;padding:15px 20px;width:100%;position:relative;overflow:hidden;transition:transform .12s,box-shadow .2s;touch-action:manipulation;}
 .btn:active{transform:scale(.95);}
 .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 50%);pointer-events:none;}
 .btn-r{background:linear-gradient(135deg,var(--r),#a8001e);color:#fff;box-shadow:0 0 24px rgba(255,39,82,.35),0 4px 16px rgba(0,0,0,.5);}
@@ -75,11 +76,11 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .lbtns{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;}
 
 /* GAME PICKER */
-#picker{position:fixed;inset:0;z-index:800;background:rgba(6,6,8,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s;}
+#picker{position:fixed;inset:0;z-index:800;background:rgba(6,6,8,.97);display:flex;flex-direction:column;align-items:center;gap:0;padding:0;opacity:0;pointer-events:none;transition:opacity .3s;touch-action:pan-y;}
 #picker.open{opacity:1;pointer-events:all;}
-.picker-t{font-family:var(--fd);font-size:36px;letter-spacing:6px;color:var(--w);text-align:center;}
-.glist{display:flex;flex-direction:column;gap:8px;width:100%;max-width:360px;}
-.grow{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--s2);border-radius:12px;border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:transform .12s;}
+.picker-t{font-family:var(--fd);font-size:26px;letter-spacing:5px;color:var(--w);padding:18px 20px 10px;width:100%;max-width:420px;flex-shrink:0;}
+.glist{display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:8px 16px 100px;touch-action:pan-y;}
+.grow{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--s2);border-radius:12px;border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:transform .12s;touch-action:manipulation;}
 .grow:active{transform:scale(.96);}
 .gicon{font-size:28px;width:44px;text-align:center;}
 .ginfo{flex:1;}
@@ -301,6 +302,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .puz-ps{font-family:var(--fd);font-size:28px;}
 @keyframes dadoPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @keyframes bombTick{0%,100%{transform:scale(1);}50%{transform:scale(1.12);filter:drop-shadow(0 0 20px var(--r));}}
+@keyframes rspin{0%{transform:translateY(-20px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
 .simon-btn{border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:36px;height:110px;transition:transform .1s,filter .1s;border:3px solid rgba(255,255,255,.1);}
 .simon-btn:active,.simon-btn.lit{filter:brightness(2.5);transform:scale(.96);}
 .gtr-note{position:absolute;border-radius:10px;pointer-events:none;}
@@ -376,9 +378,11 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 <!-- GAME PICKER -->
 <div id="picker">
-  <div class="picker-t">SCEGLI GIOCO</div>
+  <div class="picker-t">🎮 SCEGLI GIOCO</div>
   <div class="glist" id="gList"></div>
-  <button class="btn btn-ghost" style="max-width:360px;margin-top:4px;" onclick="closePicker()">ANNULLA</button>
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:rgba(6,6,8,.97);border-top:1px solid rgba(255,255,255,.08);z-index:801;display:flex;justify-content:center;">
+    <button class="btn btn-ghost" style="max-width:360px;width:100%;touch-action:manipulation;" onclick="closePicker()">✕ ANNULLA</button>
+  </div>
 </div>
 
 <!-- TOUCH BATTLE -->
@@ -1017,6 +1021,7 @@ function handleGameMsg(msg) {
     case 'tet_block':     tetOnBlock(msg); break;
     case 'tet_attack':    tetOnAttack(msg); break;
     case 'cast_enemy':    castOnEnemy(msg); break;
+    case 'box_hit':       break; // opponent hit - visual only
     // global features
     case 'emoji_chat':    chatOnEmoji(msg); break;
     case 'exp_gain':      expOnGain(msg); break;
@@ -1222,6 +1227,9 @@ function launchGame(id, seed) {
   clearAllTimers();
   myScore = 0;
   Object.values(players).forEach(p => p.score = 0);
+  // Show emoji chat button during games
+  const chatBtn = $('chatToggleBtn');
+  if (chatBtn) chatBtn.style.display = 'block';
   if (id === 'auto') { startAuto(seed); return; }
   chaosMode = (id === 'chaos');
   $('chaosBar').style.display = chaosMode ? 'block' : 'none';
@@ -1264,7 +1272,7 @@ function launchGame(id, seed) {
 // ═══════════════════════════════════════════
 function startAuto(seed) {
   autoIdx = 0;
-  autoGames = ['tb','fight','shake','bluff'];
+  autoGames = ['tb','fight','shake','bluff','chaos','draw','war','run','shoot','react','puzzle','dado','snakeb','target','simon','bomba','guitar','trivia','dragon','slotpvp','picspeed','surf','boxing','bowling','giostra','dance','tetris','castle'];
   for (let i = autoGames.length-1; i > 0; i--) { const j=Math.floor(Math.random()*(i+1)); [autoGames[i],autoGames[j]]=[autoGames[j],autoGames[i]]; }
   nextAuto();
 }
@@ -1597,6 +1605,12 @@ function endBluff(){
 // ═══════════════════════════════════════════
 function showResults(){
   clearAllTimers();
+  // Hide chat button
+  const chatBtn = $('chatToggleBtn');
+  if (chatBtn) chatBtn.style.display = 'none';
+  const emojiBar = $('emojiBar');
+  if (emojiBar) emojiBar.style.display = 'none';
+  emojiBarOpen = false;
   if(players[myId])players[myId].score=myScore;
   const sorted=Object.values(players).sort((a,b)=>b.score-a.score);
   ss('results');
@@ -1617,6 +1631,10 @@ function showResults(){
     </div>`).join('');
   if(sorted[0]?.id===myId){sWin();vib([100,50,100,50,200]);}
   else tone(220,'sawtooth',.5,.4);
+  // EXP gain
+  const myRank=sorted.findIndex(p=>p.id===myId)+1;
+  const expPts=myRank===1?50:myRank===2?30:myRank===3?20:10;
+  setTimeout(()=>{ if(typeof gainExp==='function') gainExp(expPts); }, 1200);
 }
 
 // ═══════════════════════════════════════════
@@ -1647,11 +1665,49 @@ function clearAllTimers(){
   clearInterval(fightTimerInterval);clearInterval(shakeTimer);
   clearInterval(bluffQTimer);stopProx();
   window.removeEventListener('devicemotion',onMotion);
+  // New games v4-v6
+  clearInterval(dadoTimer);
+  clearInterval(snkTimer); cancelAnimationFrame(snkFrame); snkActive=false;
+  clearInterval(tgtTimer); clearInterval(tgtInterval); tgtActive=false;
+  clearInterval(simonTimer);
+  clearInterval(detTimer);
+  clearInterval(bombaGameTimer);
+  clearInterval(gtrTimer); cancelAnimationFrame(gtrFrame); gtrActive=false;
+  clearInterval(triviaTimer); clearInterval(triviaGameTimer);
+  clearInterval(drgTimer); drgActive=false;
+  clearInterval(spvTimer);
+  clearInterval(psGameTimer); clearInterval(psTimer);
+  clearInterval(srfTimer); cancelAnimationFrame(srfFrame); srfActive=false;
+  clearInterval(boxTimer); clearInterval(boxFlashInt); boxActive=false;
+  clearInterval(bwlTimer); bwlActive=false;
+  clearInterval(oracTimer);
+  clearInterval(gstTimer); cancelAnimationFrame(gstFrame); gstActive=false;
+  clearInterval(warTimer);
+  cancelAnimationFrame(runFrame); runActive=false; clearInterval(runTimer);
+  cancelAnimationFrame(spcFrame); spcActive=false; clearInterval(spcTimer);
+  cancelAnimationFrame(ahFrame); ahActive=false;
+  clearInterval(tetDropTimer); clearInterval(tetTimer); tetActive=false;
+  cancelAnimationFrame(cstFrame); cstActive=false; clearInterval(cstTimer);
+  ahTearInput();
+  // Clean up canvas listeners by replacing canvases (forces listener removal)
+  ['runCanvas','spcCanvas','srfCanvas','gstCanvas','cstCanvas','bwlCanvas'].forEach(id=>{
+    const el=$(id); if(!el)return;
+    const clone=el.cloneNode(false);
+    if(el.parentNode)el.parentNode.replaceChild(clone,el);
+  });
+  if(typeof bombaTickTimer!=='undefined') clearTimeout(bombaTickTimer);
 }
 
-// touch guard
+// touch guard - only prevent double-tap zoom, not all taps
 let lt=0;
-document.addEventListener('touchend',e=>{const n=Date.now();if(n-lt<300)e.preventDefault();lt=n;},{passive:false});
+document.addEventListener('touchend',e=>{
+  const n=Date.now();
+  // Only prevent if tapping very fast AND not on a scrollable element
+  if(n-lt<250 && e.target.tagName!=='INPUT' && e.target.tagName!=='TEXTAREA'){
+    e.preventDefault();
+  }
+  lt=n;
+},{passive:false});
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     if($('createPanel')?.style.display!=='none')createRoom();
@@ -2859,7 +2915,7 @@ function detOnVote(m){fx('🕵️ '+players[m.voterId]?.name+' ha votato!','var(
 // ═══════════════════════════════════════════
 //  💥 BOMBA A OROLOGERIA
 // ═══════════════════════════════════════════
-let bombaHolder='',bombaTimer=null,bombaCount=10,bombaActive=false,bombaScore=0;
+let bombaHolder='',bombaTickTimer=null,bombaCount=10,bombaActive=false,bombaScore=0;
 let bombaGameTimer=null,bombaTimeLeft=60;
 
 function startBomba(){
@@ -2881,7 +2937,7 @@ function bombaTick(){
     bombaExplode();return;
   }
   const delay=Math.max(400,1200-((10-bombaCount)*80));
-  bombaGameTimer=setTimeout(bombaTick,delay);
+  bombaTickTimer=setTimeout(bombaTick,delay);
 }
 function renderBomba(){
   const me=bombaHolder===myId;
@@ -2901,7 +2957,7 @@ function bombaPass(){
 }
 function bombaOnPass(m){bombaHolder=m.to;bombaCount=m.count;renderBomba();if(m.to!==myId&&isHost)bombaTick();}
 function bombaExplode(){
-  bombaActive=false;clearInterval(bombaGameTimer);
+  bombaActive=false;clearTimeout(bombaTickTimer);clearInterval(bombaGameTimer);
   const exploded=bombaHolder===myId;
   $('bombIcon').textContent='💥';
   $('bombTimer').textContent='💥';
@@ -3144,20 +3200,6 @@ document.head.appendChild(emojiStyle);
 function showGameUI(){$('chatToggleBtn').style.display='block';}
 function hideGameUI(){$('chatToggleBtn').style.display='none';closeEmojiBar();}
 
-// Override showResults to gain EXP
-const _origShowResults=showResults;
-function showResults(){
-  _origShowResults();
-  const sorted=Object.values(players).sort((a,b)=>b.score-a.score);
-  const myRank=sorted.findIndex(p=>p.id===myId)+1;
-  const expPts=myRank===1?50:myRank===2?30:myRank===3?20:10;
-  setTimeout(()=>gainExp(expPts,'partita'),1000);
-  hideGameUI();
-}
-
-// Override launchGame to show chat btn
-const _origLaunch=launchGame;
-function launchGame(id,seed){_origLaunch(id,seed);showGameUI();}
 
 // ── GLOBAL TIMER DISPLAY ──
 // già presente in ogni gioco individualmente
