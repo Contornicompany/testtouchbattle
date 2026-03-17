@@ -7,193 +7,181 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  pingTimeout: 15000,
-  pingInterval: 5000
+  pingTimeout: 10000,
+  pingInterval: 3000
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Stanze in memoria ──
+// rooms[code] = { code, players: { socketId: {id, name, color, emoji, score, ready, host} }, started: bool }
 const rooms = {};
-
-const TEAM_COLORS = ['#ff2752','#00e5ff','#ffe600','#00ff88','#ff7a00','#cc44ff','#ff88bb','#44ffdd'];
-const TEAM_EMOJIS = ['🔥','⚡','💎','🌟','🍸','🎯','🎭','🚀'];
+const COLORS = ['#ff2752','#00e5ff','#ffe600','#00ff88','#ff7a00','#cc44ff','#ff88aa','#44ffcc'];
+const EMOJIS = ['🔥','⚡','💎','🌟','👾','🚀','🎯','💥'];
 
 function genCode() {
-  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 4; i++) s += c[Math.floor(Math.random() * c.length)];
-  return s;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 4; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
 }
 
-function getPlayers(code) {
+function getRoomPlayers(code) {
   return rooms[code] ? Object.values(rooms[code].players) : [];
 }
 
-function getTeams(code) {
-  return rooms[code] ? rooms[code].teams : [];
+function broadcastRoom(code, event, data, excludeId = null) {
+  if (!rooms[code]) return;
+  Object.keys(rooms[code].players).forEach(sid => {
+    if (sid !== excludeId) {
+      io.to(sid).emit(event, data);
+    }
+  });
 }
 
-function broadcastAll(code, event, data) {
+function broadcastRoomAll(code, event, data) {
+  if (!rooms[code]) return;
   io.to(code).emit(event, data);
 }
 
 io.on('connection', (socket) => {
+  console.log('Connect:', socket.id);
 
-  // HOST creates room (is the master screen)
+  // ── Crea stanza ──
   socket.on('create_room', ({ name }, cb) => {
     let code;
     do { code = genCode(); } while (rooms[code]);
+
+    const idx = 0;
     rooms[code] = {
       code,
       players: {
         [socket.id]: {
-          id: socket.id, name: (name||'HOST').substring(0,14).toUpperCase(),
-          color: '#ffffff', emoji: '👑', score: 0,
-          teamId: null, host: true, isScreen: true
+          id: socket.id,
+          name: (name || 'PLAYER').substring(0, 12).toUpperCase(),
+          color: COLORS[idx],
+          emoji: EMOJIS[idx],
+          score: 0,
+          ready: true,
+          host: true
         }
       },
-      teams: [],
-      started: false,
-      eveningScores: {}, // teamId → total points for the evening
-      currentGame: null,
-      judgeId: socket.id
+      started: false
     };
+
     socket.join(code);
     socket.data.roomCode = code;
-    cb({ ok: true, code, playerId: socket.id });
-    broadcastAll(code, 'room_update', { players: getPlayers(code), teams: getTeams(code), code });
+    console.log('Room created:', code, 'by', name);
+
+    cb({ ok: true, code, player: rooms[code].players[socket.id] });
+    broadcastRoomAll(code, 'players_update', getRoomPlayers(code));
   });
 
-  // PLAYER joins room
+  // ── Entra in stanza ──
   socket.on('join_room', ({ name, code }, cb) => {
-    code = (code||'').toUpperCase().trim();
-    if (!rooms[code]) { cb({ ok: false, error: 'Stanza non trovata' }); return; }
-    const count = Object.keys(rooms[code].players).length;
-    if (count >= 32) { cb({ ok: false, error: 'Stanza piena' }); return; }
+    code = (code || '').toUpperCase().trim();
+    if (!rooms[code]) { cb({ ok: false, error: 'Stanza non trovata: ' + code }); return; }
+    if (Object.keys(rooms[code].players).length >= 8) { cb({ ok: false, error: 'Stanza piena (max 8)' }); return; }
+    if (rooms[code].started) { cb({ ok: false, error: 'Partita già iniziata' }); return; }
+
+    const idx = Object.keys(rooms[code].players).length;
     rooms[code].players[socket.id] = {
-      id: socket.id, name: (name||'PLAYER').substring(0,14).toUpperCase(),
-      color: TEAM_COLORS[count % TEAM_COLORS.length],
-      emoji: TEAM_EMOJIS[count % TEAM_EMOJIS.length],
-      score: 0, teamId: null, host: false, isScreen: false
+      id: socket.id,
+      name: (name || 'PLAYER').substring(0, 12).toUpperCase(),
+      color: COLORS[idx % COLORS.length],
+      emoji: EMOJIS[idx % EMOJIS.length],
+      score: 0,
+      ready: false,
+      host: false
     };
+
     socket.join(code);
     socket.data.roomCode = code;
-    cb({ ok: true, code, playerId: socket.id, player: rooms[code].players[socket.id] });
-    broadcastAll(code, 'room_update', { players: getPlayers(code), teams: getTeams(code), code });
+    console.log('Joined:', code, 'by', name);
+
+    cb({ ok: true, code, player: rooms[code].players[socket.id] });
+    broadcastRoomAll(code, 'players_update', getRoomPlayers(code));
   });
 
-  // HOST creates team
-  socket.on('create_team', ({ name, color, emoji }, cb) => {
+  // ── Pronto ──
+  socket.on('set_ready', ({ ready }) => {
+    const code = socket.data.roomCode;
+    if (!rooms[code]?.players[socket.id]) return;
+    rooms[code].players[socket.id].ready = ready;
+    broadcastRoomAll(code, 'players_update', getRoomPlayers(code));
+  });
+
+  // ── Avvia gioco (solo host) ──
+  socket.on('start_game', ({ gameId, seed }) => {
     const code = socket.data.roomCode;
     if (!rooms[code]) return;
-    const id = 't_' + Date.now();
-    rooms[code].teams.push({ id, name: name.toUpperCase(), color, emoji, score: 0, eveningScore: 0, members: [] });
-    cb && cb({ ok: true, id });
-    broadcastAll(code, 'room_update', { players: getPlayers(code), teams: getTeams(code), code });
+    const p = rooms[code].players[socket.id];
+    if (!p?.host) return;
+    rooms[code].started = true;
+    // Reset scores
+    Object.values(rooms[code].players).forEach(pl => pl.score = 0);
+    broadcastRoomAll(code, 'game_start', { gameId, seed });
+    console.log('Game started:', code, gameId);
   });
 
-  // Assign player to team
-  socket.on('join_team', ({ teamId, playerId }, cb) => {
-    const code = socket.data.roomCode;
-    if (!rooms[code]) return;
-    const pid = playerId || socket.id;
-    const p = rooms[code].players[pid];
-    if (!p) return;
-    // Remove from old team
-    rooms[code].teams.forEach(t => { t.members = t.members.filter(m => m !== pid); });
-    // Add to new team
-    const team = rooms[code].teams.find(t => t.id === teamId);
-    if (team) { team.members.push(pid); p.teamId = teamId; p.color = team.color; }
-    cb && cb({ ok: true });
-    broadcastAll(code, 'room_update', { players: getPlayers(code), teams: getTeams(code), code });
-  });
-
-  // Game message relay
+  // ── Messaggi di gioco (relay generico) ──
   socket.on('game_msg', (msg) => {
     const code = socket.data.roomCode;
     if (!rooms[code]) return;
     msg.sid = socket.id;
+    // Relay a tutti gli altri nella stanza
     socket.to(code).emit('game_msg', msg);
   });
 
-  // Host starts a game
-  socket.on('start_game', ({ gameId, seed, config }) => {
-    const code = socket.data.roomCode;
-    if (!rooms[code]) return;
-    rooms[code].started = true;
-    rooms[code].currentGame = gameId;
-    // Reset round scores
-    Object.values(rooms[code].players).forEach(p => p.score = 0);
-    rooms[code].teams.forEach(t => t.score = 0);
-    broadcastAll(code, 'game_start', { gameId, seed, config, players: getPlayers(code), teams: getTeams(code) });
-  });
-
-  // Update player score
+  // ── Aggiorna score ──
   socket.on('update_score', ({ score }) => {
     const code = socket.data.roomCode;
     if (!rooms[code]?.players[socket.id]) return;
     rooms[code].players[socket.id].score = score;
-    // Also update team score
+    socket.to(code).emit('score_update', { id: socket.id, score });
+  });
+
+  // ── Fine gioco ──
+  socket.on('game_over', () => {
+    const code = socket.data.roomCode;
+    if (!rooms[code]) return;
     const p = rooms[code].players[socket.id];
-    if (p.teamId) {
-      const team = rooms[code].teams.find(t => t.id === p.teamId);
-      if (team) {
-        team.score = rooms[code].teams.find(t=>t.id===p.teamId)?.members
-          .reduce((sum, mid) => sum + (rooms[code].players[mid]?.score||0), 0);
-      }
-    }
-    broadcastAll(code, 'scores_update', { players: getPlayers(code), teams: getTeams(code) });
-  });
-
-  // Host awards points manually (judge mode)
-  socket.on('judge_award', ({ teamId, playerId, pts, reason }) => {
-    const code = socket.data.roomCode;
-    if (!rooms[code]) return;
-    if (teamId) {
-      const team = rooms[code].teams.find(t => t.id === teamId);
-      if (team) { team.score += pts; team.eveningScore += pts; }
-    }
-    if (playerId) {
-      const p = rooms[code].players[playerId];
-      if (p) p.score += pts;
-    }
-    broadcastAll(code, 'judge_award', { teamId, playerId, pts, reason });
-    broadcastAll(code, 'scores_update', { players: getPlayers(code), teams: getTeams(code) });
-  });
-
-  // End game — add to evening totals
-  socket.on('game_over', ({ winners }) => {
-    const code = socket.data.roomCode;
-    if (!rooms[code]) return;
-    // Add round points to evening totals
-    rooms[code].teams.forEach(t => { t.eveningScore += t.score; });
+    if (!p?.host) return;
     rooms[code].started = false;
-    broadcastAll(code, 'game_over', {
-      players: getPlayers(code),
-      teams: getTeams(code),
-      winners: winners || []
-    });
+    broadcastRoomAll(code, 'game_over', getRoomPlayers(code));
   });
 
-  socket.on('leave', () => handleDisconnect(socket));
-  socket.on('disconnect', () => handleDisconnect(socket));
-
-  function handleDisconnect(s) {
-    const code = s.data?.roomCode;
+  // ── Disconnessione ──
+  socket.on('disconnect', () => {
+    const code = socket.data.roomCode;
     if (!code || !rooms[code]) return;
-    const wasHost = rooms[code].players[s.id]?.host;
-    // Remove from teams
-    rooms[code].teams.forEach(t => { t.members = t.members.filter(m => m !== s.id); });
-    delete rooms[code].players[s.id];
-    if (Object.keys(rooms[code].players).length === 0) { delete rooms[code]; return; }
-    if (wasHost) {
-      const newId = Object.keys(rooms[code].players)[0];
-      rooms[code].players[newId].host = true;
-      rooms[code].judgeId = newId;
+    const wasHost = rooms[code].players[socket.id]?.host;
+    delete rooms[code].players[socket.id];
+    console.log('Disconnect:', socket.id, 'from', code);
+
+    if (Object.keys(rooms[code].players).length === 0) {
+      delete rooms[code];
+      console.log('Room deleted:', code);
+      return;
     }
-    broadcastAll(code, 'room_update', { players: getPlayers(code), teams: getTeams(code), code });
-  }
+
+    // Passa host al prossimo
+    if (wasHost) {
+      const newHostId = Object.keys(rooms[code].players)[0];
+      rooms[code].players[newHostId].host = true;
+    }
+
+    broadcastRoomAll(code, 'players_update', getRoomPlayers(code));
+  });
 });
 
+// Pulizia stanze vecchie ogni 30 minuti
+setInterval(() => {
+  const now = Date.now();
+  Object.keys(rooms).forEach(code => {
+    if (Object.keys(rooms[code].players).length === 0) delete rooms[code];
+  });
+}, 30 * 60 * 1000);
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('BarNight server on port', PORT));
+server.listen(PORT, () => console.log('Touch Battle server on port', PORT));

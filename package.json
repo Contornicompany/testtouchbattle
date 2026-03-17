@@ -1,8 +1,16 @@
 {
-  "name": "barnight",
-  "version": "1.0.0",
-  "description": "Bar Night - Il gioco delle serate",
+  "name": "touch-battle",
+  "version": "2.0.0",
+  "description": "Touch Battle Multiplayer Game",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "express": "^4.18.2", "socket.io": "^4.6.1" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
 }
