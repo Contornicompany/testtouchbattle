@@ -379,10 +379,10 @@ body::after { content:''; position:fixed; inset:0; background-image:url("data:im
 // ═══════════════════════════════════════════
 //  SOCKET
 // ═══════════════════════════════════════════
-const socket = io({ transports:['websocket','polling'] });
-socket.on('connect',       ()=>{ setConn(true); toast('✅ Connesso!'); });
-socket.on('disconnect',    ()=>{ setConn(false); toast('⚠️ Disconnesso...'); });
-socket.on('connect_error', ()=>setConn(false));
+const socket = io({ transports: ['websocket','polling'] });
+socket.on('connect',    () => { setConn(true);  toast('✅ Connesso!'); });
+socket.on('disconnect', () => { setConn(false); toast('⚠️ Disconnesso...'); });
+socket.on('connect_error', () => setConn(false));
 socket.on('room_update',   onRoomUpdate);
 socket.on('game_start',    onGameStart);
 socket.on('game_msg',      onGameMsg);
@@ -390,50 +390,50 @@ socket.on('scores_update', onScoresUpdate);
 socket.on('game_over',     onGameOver);
 socket.on('judge_award',   onJudgeAward);
 
-function gMsg(m){ m.sid=socket.id; socket.emit('game_msg',m); }
-function setConn(ok){
+function gMsg(m) { m.sid = socket.id; socket.emit('game_msg', m); }
+function setConn(ok) {
   const d=$('connDot'),l=$('connLbl');
-  if(d)d.className='conn-dot '+(ok?'conn-ok':'conn-err');
-  if(l)l.textContent=ok?'server online ✓':'disconnesso';
+  if(d) d.className='conn-dot '+(ok?'conn-ok':'conn-err');
+  if(l) l.textContent=ok?'server online ✓':'disconnesso';
 }
 
 // ═══════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════
-let myId=socket.id, myRole='', myTeamId=null, myRoundScore=0;
-let roomCode='', players={}, teams=[], currentGame='', isHost=false;
+let myId = socket.id;
+let myRole = ''; // 'host' | 'player'
+let myTeamId = null;
+let myRoundScore = 0;
+let roomCode = '';
+let players = {};  // id → player
+let teams = [];    // array of team objects
+let currentGame = '';
+let isHost = false;
 
 // ═══════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════
-const $=id=>document.getElementById(id);
-const ss=id=>{ document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); $(id).classList.remove('hidden'); };
-let _tt; const toast=m=>{ const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800); };
-let _ft; const fx=(m,c='var(--gold)')=>{ const b=$('fxBanner');b.textContent=m;b.style.color=c;b.classList.add('show');clearTimeout(_ft);_ft=setTimeout(()=>b.classList.remove('show'),2600); };
-const vib=p=>{ try{navigator.vibrate&&navigator.vibrate(p);}catch(e){} };
-let _AC;
-const _getAC=()=>{ if(!_AC)_AC=new(window.AudioContext||window.webkitAudioContext)(); return _AC; };
-const tone=(f,t,d,v=.3)=>{ try{const c=_getAC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d);}catch(e){} };
-const sCheer=()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.25,.4),i*120));
-const sWin=()=>[440,554,659,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.3,.35),i*100));
-const sFail=()=>tone(180,'sawtooth',.3,.4);
-const sOk=()=>{ tone(440,'sine',.1,.3); setTimeout(()=>tone(880,'sine',.1,.3),150); };
-const sBuzz=()=>{ tone(330,'square',.08,.5); vib(40); };
-
-function spawnPtsPop(text,color,x,y){
-  const el=document.createElement('div'); el.className='pts-pop';
-  el.textContent=text; el.style.color=color||'var(--gold)';
-  el.style.left=(x||Math.random()*60+20)+'%'; el.style.top=(y||40)+'%';
-  document.body.appendChild(el); setTimeout(()=>el.remove(),1300);
-}
+const $ = id => document.getElementById(id);
+const ss = id => { document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); $(id).classList.remove('hidden'); };
+let _toastT;
+const toast = m => { const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove('show'),2800); };
+let _fxT;
+const fx = (m,c='var(--gold)') => { const b=$('fxBanner');b.textContent=m;b.style.color=c;b.classList.add('show');clearTimeout(_fxT);_fxT=setTimeout(()=>b.classList.remove('show'),2600); };
+let AC;
+const ga = () => { if(!AC) AC=new(window.AudioContext||window.webkitAudioContext)(); return AC; };
+const tone = (f,t,d,v=.3) => { try{const c=ga(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d);}catch(e){} };
+const vib = p => { try{navigator.vibrate&&navigator.vibrate(p);}catch(e){} };
+const sCheer = () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.25,.4),i*120));
+const sSuccess = () => { tone(440,'sine',.12,.3); setTimeout(()=>tone(880,'sine',.12,.3),150); };
+const sFail = () => { tone(220,'sawtooth',.3,.4); };
 
 // ═══════════════════════════════════════════
 //  HOME / SETUP
 // ═══════════════════════════════════════════
-function showHostSetup(){ $('hostPanel').style.display='flex';$('hostPanel').style.flexDirection='column';$('joinPanel').style.display='none'; }
-function showJoinPanel(){ $('joinPanel').style.display='flex';$('joinPanel').style.flexDirection='column';$('hostPanel').style.display='none'; }
+function showHostSetup() { $('hostPanel').style.display='flex'; $('hostPanel').style.flexDirection='column'; $('joinPanel').style.display='none'; }
+function showJoinPanel() { $('joinPanel').style.display='flex'; $('joinPanel').style.flexDirection='column'; $('hostPanel').style.display='none'; }
 
-function createRoom(){
+function createRoom() {
   const name=($('hostName').value.trim()||'BAR NIGHT').substring(0,16).toUpperCase();
   ss('connecting');
   socket.emit('create_room',{name},res=>{
@@ -444,7 +444,7 @@ function createRoom(){
   });
 }
 
-function joinRoom(){
+function joinRoom() {
   const name=($('playerName').value.trim()||'OSPITE').substring(0,14).toUpperCase();
   const code=$('joinCode').value.trim().toUpperCase();
   if(code.length!==4){toast('⚠️ Codice a 4 lettere');return;}
@@ -452,14 +452,17 @@ function joinRoom(){
   socket.emit('join_room',{name,code},res=>{
     if(!res.ok){toast('❌ '+res.error);ss('home');return;}
     myId=socket.id; roomCode=res.code; isHost=false; myRole='player';
-    const p=res.player;
-    $('pEmoji').textContent=p.emoji; $('pNameDisplay').textContent=p.name; $('pRoomCode').textContent='SERATA: '+code;
-    ss('playerLobby'); toast('🎭 Benvenuto!');
+    $('pEmoji').textContent=res.player.emoji;
+    $('pNameDisplay').textContent=res.player.name;
+    $('pRoomCode').textContent='SERATA: '+code;
+    ss('playerLobby');
+    toast('🎭 Benvenuto!');
   });
 }
 
-function goHome(){
-  socket.emit('leave'); players={}; teams=[];
+function goHome() {
+  socket.emit('leave');
+  players={}; teams=[];
   $('hostPanel').style.display='none'; $('joinPanel').style.display='none';
   ss('home');
 }
@@ -467,45 +470,51 @@ function goHome(){
 // ═══════════════════════════════════════════
 //  ROOM UPDATES
 // ═══════════════════════════════════════════
-function onRoomUpdate(data){
-  players={}; (data.players||[]).forEach(p=>players[p.id]=p);
-  teams=data.teams||[];
-  renderHostLobby(); renderPlayerLobby(); renderMasterScoreboard();
+function onRoomUpdate(data) {
+  players = {};
+  (data.players||[]).forEach(p => players[p.id]=p);
+  teams = data.teams||[];
+  renderHostLobby();
+  renderPlayerLobby();
+  renderMasterScoreboard();
 }
 
-function renderHostLobby(){
-  if(!isHost)return;
-  const tl=$('teamsList'); if(!tl)return;
+function renderHostLobby() {
+  if(!isHost) return;
+  // Teams
+  const tl=$('teamsList'); if(!tl) return;
   tl.innerHTML=teams.map(t=>`
-    <div class="team-card" style="border-color:${t.color}44;">
+    <div class="team-card" style="border-color:${t.color}33;">
       <div class="team-icon" style="background:${t.color}22;color:${t.color};">${t.emoji}</div>
-      <div style="flex:1;">
+      <div>
         <div class="team-name" style="color:${t.color};">${t.name}</div>
-        <div class="team-members">${t.members.length} giocator${t.members.length===1?'e':'i'}
-          ${t.members.map(mid=>`<span style="color:${t.color};opacity:.7;"> · ${(players[mid]?.name||'').substring(0,8)}</span>`).join('')}
-        </div>
+        <div class="team-members">${t.members.length} ${t.members.length===1?'giocatore':'giocatori'}</div>
       </div>
-      <div class="team-score-badge">${t.eveningScore||0}<div style="font-size:8px;letter-spacing:1px;color:var(--dim);">pts serata</div></div>
+      <div class="team-score-badge">${t.eveningScore||0} pts</div>
     </div>`).join('');
-  const pl=$('playersList'); if(!pl)return;
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  pl.innerHTML=nonScreen.map(p=>{
+  // Players
+  const pl=$('playersList'); if(!pl) return;
+  pl.innerHTML=Object.values(players).filter(p=>!p.isScreen).map(p=>{
     const team=teams.find(t=>t.id===p.teamId);
     return`<div class="player-row">
       <div class="p-emoji">${p.emoji}</div>
       <div class="p-name">${p.name}</div>
-      <select onchange="hostAssignTeam('${p.id}',this.value)" style="background:var(--s1);border:1px solid rgba(255,255,255,.12);color:var(--cream);border-radius:6px;padding:4px 6px;font-size:10px;touch-action:manipulation;flex-shrink:0;">
-        <option value="">squadra...</option>
-        ${teams.map(t=>`<option value="${t.id}" ${t.id===p.teamId?'selected':''}>${t.emoji} ${t.name}</option>`).join('')}
-      </select>
+      ${team?`<div class="p-team-badge" style="background:${team.color}22;color:${team.color};border:1px solid ${team.color}44;">${team.name}</div>`:'<div class="p-team-badge" style="color:var(--dim);">NESSUNA</div>'}
+      ${isHost?`<select onchange="hostAssignTeam('${p.id}',this.value)" style="background:var(--s1);border:1px solid rgba(255,255,255,.1);color:var(--cream);border-radius:6px;padding:4px;font-size:10px;touch-action:manipulation;">
+        <option value="">-- squadra --</option>
+        ${teams.map(t=>`<option value="${t.id}" ${t.id===p.teamId?'selected':''}>${t.name}</option>`).join('')}
+      </select>`:''}
     </div>`;
-  }).join('') || '<div style="color:var(--dim);font-size:10px;letter-spacing:2px;padding:8px;">Nessun giocatore ancora...</div>';
+  }).join('');
 }
 
-function hostAssignTeam(playerId,teamId){ socket.emit('join_team',{teamId,playerId}); }
+function hostAssignTeam(playerId, teamId) {
+  socket.emit('join_team', { teamId, playerId });
+}
 
-function addTeam(){
-  const name=$('newTeamName').value.trim(); if(!name){toast('⚠️ Nome squadra?');return;}
+function addTeam() {
+  const name=$('newTeamName').value.trim();
+  if(!name){toast('⚠️ Inserisci un nome');return;}
   const colors=['#ff2752','#00e5ff','#ffe600','#00ff88','#ff7a00','#cc44ff','#ff88bb','#44ffdd'];
   const emojis=['🔥','⚡','💎','🌟','🍸','🎯','🎭','🚀'];
   const idx=teams.length%8;
@@ -513,1300 +522,594 @@ function addTeam(){
   $('newTeamName').value='';
 }
 
-function renderPlayerLobby(){
-  if(isHost)return;
-  const grid=$('teamSelectGrid'); if(!grid)return;
-  if(teams.length===0){ grid.innerHTML='<div style="color:var(--dim);font-size:10px;letter-spacing:2px;text-align:center;grid-column:1/-1;">L\'host sta creando le squadre...</div>'; return; }
+function renderPlayerLobby() {
+  if(isHost) return;
+  const grid=$('teamSelectGrid'); if(!grid) return;
   grid.innerHTML=teams.map(t=>`
-    <div class="team-select-btn" id="tsb_${t.id}"
-         style="border-color:${t.id===myTeamId?t.color:'rgba(255,255,255,.1)'};
-                box-shadow:${t.id===myTeamId?'0 0 20px '+t.color+'55':''};
-                background:${t.id===myTeamId?t.color+'18':''}"
-         onclick="joinTeam('${t.id}')" >
-      <div style="font-size:32px;">${t.emoji}</div>
-      <div style="font-family:var(--fd);font-size:13px;color:${t.color};margin-top:4px;">${t.name}</div>
+    <div class="team-select-btn ${t.id===myTeamId?'selected':''}" 
+         style="border-color:${t.id===myTeamId?t.color:'rgba(255,255,255,.1)'};color:${t.color};${t.id===myTeamId?'box-shadow:0 0 16px '+t.color+'66':''};"
+         onclick="joinTeam('${t.id}')" style="touch-action:manipulation;">
+      <div style="font-size:28px;">${t.emoji}</div>
+      <div style="font-family:var(--fd);font-size:13px;margin-top:4px;">${t.name}</div>
       <div style="font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:2px;">${t.members.length} giocatori</div>
-      ${t.id===myTeamId?'<div style="font-size:9px;color:'+t.color+';margin-top:4px;">✓ UNITO</div>':''}
     </div>`).join('');
 }
 
-function joinTeam(teamId){
+function joinTeam(teamId) {
   myTeamId=teamId;
   socket.emit('join_team',{teamId},()=>{});
   const t=teams.find(t=>t.id===teamId);
   if(t){ $('pgTeamDot').style.background=t.color; $('pgTeamName').textContent=t.name; }
-  renderPlayerLobby(); toast('✅ '+teams.find(t=>t.id===teamId)?.name);
+  renderPlayerLobby();
+  toast('✅ Unito a '+teams.find(t=>t.id===teamId)?.name);
 }
 
 // ═══════════════════════════════════════════
 //  MASTER SCREEN
 // ═══════════════════════════════════════════
-function goToMasterScreen(){
-  ss('masterScreen'); $('msCodeDisplay').textContent='SERATA: '+roomCode;
+function goToMasterScreen() {
+  ss('masterScreen');
+  $('msCodeDisplay').textContent='SERATA: '+roomCode;
   renderMasterScoreboard();
 }
 
-function renderMasterScoreboard(){
-  const sb=$('teamsScoreboard'); if(!sb)return;
+function renderMasterScoreboard() {
+  const sb=$('teamsScoreboard'); if(!sb) return;
   const sorted=[...teams].sort((a,b)=>(b.eveningScore||0)-(a.eveningScore||0));
-  if(sorted.length===0){ sb.innerHTML='<div style="color:var(--dim);font-size:11px;letter-spacing:3px;">Crea squadre per iniziare</div>'; return; }
   sb.innerHTML=sorted.map((t,i)=>`
-    <div class="score-card ${i===0&&(t.eveningScore||0)>0?'leading':''}" style="border-color:${t.color}44;">
+    <div class="score-card ${i===0&&t.eveningScore>0?'leading':''}" style="border-color:${t.color}33;">
       <div class="sc-emoji">${t.emoji}</div>
       <div class="sc-name" style="color:${t.color};">${t.name}</div>
       <div class="sc-score" style="color:${t.color};">${t.score||0}</div>
       <div class="sc-evening">Serata: ${t.eveningScore||0} pts</div>
     </div>`).join('');
+  if(sorted.length===0) sb.innerHTML='<div style="color:var(--dim);font-size:11px;letter-spacing:3px;">Nessuna squadra ancora</div>';
 }
 
-function onScoresUpdate(data){
-  players={}; (data.players||[]).forEach(p=>players[p.id]=p);
-  teams=data.teams||[];
-  renderMasterScoreboard(); renderHostLobby();
-  const myP=players[myId];
-  if(myP){ $('pgScore').textContent=myP.score||0; }
+function onScoresUpdate(data) {
+  players = {}; (data.players||[]).forEach(p=>players[p.id]=p);
+  teams = data.teams||[];
+  renderMasterScoreboard();
+  renderHostLobby();
+  // Update player HUD
+  const myPlayer=players[myId];
+  if(myPlayer) $('pgScore').textContent=myPlayer.score||0;
 }
 
 // ═══════════════════════════════════════════
 //  GAME PICKER
 // ═══════════════════════════════════════════
-const GAMES_CATALOG=[
-  {id:'trivia',  name:'TRIVIA A SQUADRE',  icon:'🧠', desc:'40 domande · categorie · streak bonus · buzz competition',         color:'var(--teal)'},
-  {id:'draw',    name:'DISEGNA UBRIACO',   icon:'🎨', desc:'Parole assurde · canvas fluido · tutti vedono in tempo reale',      color:'var(--gold)'},
-  {id:'truth',   name:'TRUTH OR DARE',     icon:'🔮', desc:'Verità o sfida · 3 livelli di piccantezza · vota la risposta',      color:'var(--rose)'},
-  {id:'whois',   name:'CHI SONO IO?',      icon:'🎭', desc:'Post-it virtuale · fai domande sì/no · indovina il personaggio',    color:'#cc44ff'},
-  {id:'vote',    name:'VOTA IL PIÙ...',    icon:'🗳️', desc:'Sondaggi sui presenti · chi è il più... · risate garantite',        color:'#ff7a00'},
+const GAMES_CATALOG = [
+  { id:'trivia', name:'TRIVIA A SQUADRE', icon:'🧠', desc:'Domande a risposta multipla per squadre. Prima a rispondere vince il punto!', color:'var(--teal)' },
+  { id:'draw',   name:'DISEGNA UBRIACO', icon:'🎨', desc:'Un giocatore disegna una parola assurda — la squadra deve indovinare!', color:'var(--gold)' },
 ];
 
-function openGamePicker(){
-  const list=$('gamePickerList'); if(!list)return;
+function openGamePicker() {
+  const list=$('gamePickerList'); if(!list) return;
   list.innerHTML=GAMES_CATALOG.map(g=>`
-    <div onclick="launchGame('${g.id}')" style="background:var(--s2);border:2px solid ${g.color}44;border-radius:16px;padding:20px;cursor:pointer;display:flex;gap:16px;align-items:center;transition:border-color .2s,transform .12s;touch-action:manipulation;" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform=''">
-      <div style="font-size:44px;flex-shrink:0;">${g.icon}</div>
+    <div onclick="launchGame('${g.id}')" style="background:var(--s2);border:2px solid ${g.color}33;border-radius:16px;padding:20px;cursor:pointer;display:flex;gap:16px;align-items:center;transition:border-color .2s;touch-action:manipulation;">
+      <div style="font-size:40px;">${g.icon}</div>
       <div>
-        <div style="font-family:var(--fd);font-size:18px;color:${g.color};letter-spacing:1px;margin-bottom:4px;">${g.name}</div>
-        <div style="font-size:10px;letter-spacing:1px;color:var(--dim);line-height:1.6;">${g.desc}</div>
+        <div style="font-family:var(--fd);font-size:18px;color:${g.color};letter-spacing:1px;">${g.name}</div>
+        <div style="font-size:10px;letter-spacing:1px;color:var(--dim);margin-top:4px;line-height:1.5;">${g.desc}</div>
       </div>
     </div>`).join('');
   $('gamePicker').style.opacity='1'; $('gamePicker').style.pointerEvents='all';
 }
-function closeGamePicker(){ $('gamePicker').style.opacity='0'; $('gamePicker').style.pointerEvents='none'; }
+function closeGamePicker() { $('gamePicker').style.opacity='0'; $('gamePicker').style.pointerEvents='none'; }
 
-function launchGame(id){
-  closeGamePicker(); currentGame=id;
+function launchGame(id) {
+  closeGamePicker();
+  currentGame=id;
   const seed=Math.floor(Math.random()*100000);
   socket.emit('start_game',{gameId:id,seed});
 }
 
-function backToMaster(){
-  clearAllGameTimers();
+function backToMaster() {
   ss('masterScreen');
   $('msGameArea').style.display='none';
   $('msScoreboard').style.display='flex';
   renderMasterScoreboard();
 }
 
-let _gameTimers=[];
-function clearAllGameTimers(){
-  _gameTimers.forEach(t=>{clearInterval(t);clearTimeout(t);});
-  _gameTimers=[];
-}
-function gt(fn,ms){ const t=setInterval(fn,ms); _gameTimers.push(t); return t; }
-function gto(fn,ms){ const t=setTimeout(fn,ms); _gameTimers.push(t); return t; }
-
 // ═══════════════════════════════════════════
 //  JUDGE PANEL
 // ═══════════════════════════════════════════
-let judgeTeamId=null, judgePts=5;
-function openJudgePanel(){
-  const jb=$('judgeTeamBtns'); if(!jb)return;
+let judgeSelectedTeamId=null, judgePts=5;
+function openJudgePanel() {
+  const jb=$('judgeTeamBtns'); if(!jb) return;
   jb.innerHTML=teams.map(t=>`
     <div class="judge-btn" id="jtb_${t.id}" onclick="selectJudgeTeam('${t.id}')" style="border-color:${t.color}44;color:${t.color};">
-      ${t.emoji} ${t.name} · Serata: ${t.eveningScore||0} pts
-    </div>`).join('') || '<div style="color:var(--dim);font-size:10px;">Nessuna squadra</div>';
-  setJudgePts(5);
+      ${t.emoji} ${t.name} — Serata: ${t.eveningScore||0} pts
+    </div>`).join('');
   $('judgePanel').classList.add('show');
 }
-function closeJudgePanel(){ $('judgePanel').classList.remove('show'); judgeTeamId=null; }
-function selectJudgeTeam(id){
-  judgeTeamId=id;
+function closeJudgePanel() { $('judgePanel').classList.remove('show'); judgeSelectedTeamId=null; }
+function selectJudgeTeam(id) {
+  judgeSelectedTeamId=id;
   document.querySelectorAll('[id^="jtb_"]').forEach(b=>b.style.background='');
-  const t=teams.find(t=>t.id===id); const el=$('jtb_'+id);
-  if(el&&t)el.style.background=t.color+'22';
+  const el=$('jtb_'+id); if(el){const t=teams.find(t=>t.id===id);el.style.background=t?.color+'22';}
 }
-function setJudgePts(n){
+function setJudgePts(n) {
   judgePts=n;
-  ['1','3','5','10'].forEach(v=>{ const b=$('jpb'+v); if(b)b.style.background=''; });
-  const b=$('jpb'+n); if(b)b.style.background='rgba(212,168,71,.25)';
+  ['1','3','5','10'].forEach(v=>$('jpb'+v).style.background='');
+  $('jpb'+n).style.background='rgba(212,168,71,.2)';
 }
-function judgeAward(){
-  if(!judgeTeamId){toast('⚠️ Seleziona una squadra');return;}
-  const reason=($('judgeReason')?.value||'').trim()||'Bonus giudice';
-  socket.emit('judge_award',{teamId:judgeTeamId,pts:judgePts,reason});
-  toast('✅ +'+judgePts+' assegnati!'); closeJudgePanel(); sCheer();
+function judgeAward() {
+  if(!judgeSelectedTeamId){toast('⚠️ Seleziona una squadra');return;}
+  const reason=$('judgeReason').value.trim()||'Bonus giudice';
+  socket.emit('judge_award',{teamId:judgeSelectedTeamId,pts:judgePts,reason});
+  toast('✅ +'+judgePts+' assegnati!');
+  closeJudgePanel(); sCheer();
 }
-function onJudgeAward(data){
+function onJudgeAward(data) {
   const t=teams.find(t=>t.id===data.teamId);
-  if(t){
-    fx('⚖️ '+t.name+' +'+data.pts+' — '+data.reason, t.color);
-    spawnPtsPop('+'+data.pts+'pts', t.color);
-  }
+  if(t) fx('⚖️ '+t.name+' +'+data.pts+' pts — '+data.reason, t.color);
+  spawnPtsPop('+'+data.pts, data.teamId?teams.find(t=>t.id===data.teamId)?.color:'var(--gold)');
+}
+function spawnPtsPop(text, color) {
+  const el=document.createElement('div'); el.className='pts-pop';
+  el.textContent=text; el.style.color=color||'var(--gold)';
+  el.style.left=Math.random()*60+20+'%'; el.style.top='40%';
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1300);
 }
 
 // ═══════════════════════════════════════════
 //  GAME START / DISPATCH
 // ═══════════════════════════════════════════
-function onGameStart(data){
+function onGameStart(data) {
   currentGame=data.gameId;
   players={}; (data.players||[]).forEach(p=>players[p.id]=p);
-  teams=data.teams||[]; myRoundScore=0;
-  clearAllGameTimers();
-  runCountdown(()=>{
-    if(isHost) startMasterGame(data.gameId, data.seed, data);
-    else       startPlayerGame(data.gameId, data.seed, data);
-  });
+  teams=data.teams||[];
+  myRoundScore=0;
+  if(isHost) {
+    // Master screen shows game UI
+    runCountdown(()=>startMasterGame(data.gameId, data.seed, data));
+  } else {
+    // Player phone shows game UI
+    runCountdown(()=>startPlayerGame(data.gameId, data.seed, data));
+  }
 }
 
-function runCountdown(cb){
+function runCountdown(cb) {
   const o=$('countdown'),n=$('countdownNum');
   o.classList.add('on'); let c=3; n.textContent=c; tone(440,'sine',.3,.5);
   const iv=setInterval(()=>{
     c--;
-    if(c<=0){clearInterval(iv);n.textContent='VIA!';n.style.color='var(--rose)';sOk();
+    if(c<=0){clearInterval(iv);n.textContent='VIA!';n.style.color='var(--rose)';tone(880,'sine',.3,.6);
       n.style.animation='none';void n.offsetWidth;n.style.animation='';
       setTimeout(()=>{o.classList.remove('on');n.style.color='var(--gold)';cb();},700);}
     else{n.textContent=c;n.style.animation='none';void n.offsetWidth;n.style.animation='';tone(330,'sine',.3,.5);}
   },900);
 }
 
-function startMasterGame(id,seed,data){
+function startMasterGame(id, seed, data) {
   ss('masterScreen');
   $('msScoreboard').style.display='none';
   $('msGameArea').style.display='flex';
-  if(id==='trivia')  initMasterTrivia(seed);
-  else if(id==='draw')  initMasterDraw(seed);
-  else if(id==='truth') initMasterTruth(seed);
-  else if(id==='whois') initMasterWhoIs(seed);
-  else if(id==='vote')  initMasterVote(seed);
+  if(id==='trivia') initMasterTrivia(seed);
+  else if(id==='draw') initMasterDraw(seed);
 }
 
-function startPlayerGame(id,seed,data){
-  ss('playerGame'); myRoundScore=0; $('pgScore').textContent='0';
+function startPlayerGame(id, seed, data) {
+  ss('playerGame');
+  myRoundScore=0; $('pgScore').textContent='0';
+  const myP=players[myId];
   const myTeam=teams.find(t=>t.id===myTeamId);
   if(myTeam){$('pgTeamDot').style.background=myTeam.color;$('pgTeamName').textContent=myTeam.name;}
-  $('pgTimer').textContent='';
-  if(id==='trivia')  initPlayerTrivia(seed);
-  else if(id==='draw')  initPlayerDraw(seed);
-  else if(id==='truth') initPlayerTruth(seed);
-  else if(id==='whois') initPlayerWhoIs(seed);
-  else if(id==='vote')  initPlayerVote(seed);
+  if(id==='trivia') initPlayerTrivia(seed);
+  else if(id==='draw') initPlayerDraw(seed);
 }
 
-function onGameMsg(msg){
+function onGameMsg(msg) {
   if(msg.sid===socket.id) return;
   const h=gameMsgHandlers[msg.type];
   if(h) h(msg);
 }
-const gmh={};  // gameMsgHandlers — single source of truth
+
+const gameMsgHandlers = {};
 
 // ═══════════════════════════════════════════
-//  ══ 🧠 TRIVIA A SQUADRE ══
-//  - 40 domande, 6 categorie
-//  - Primo a buzzare vince il round (+10 pts)
-//  - Streak bonus: 3 di fila = +5 extra
-//  - Tempo sbagliato: -2 pts
-//  - Master mostra domanda grande su TV
-//  - Player preme BUZZ poi risponde
+//  ── TRIVIA A SQUADRE ──
 // ═══════════════════════════════════════════
-const TRIVIA_Q=[
-  // 🍕 CIBO & DRINK
-  {cat:'🍕 CIBO',    q:"Quante calorie ha mediamente una pizza Margherita?",    opts:["500 kcal","800 kcal","1200 kcal","300 kcal"],a:1},
-  {cat:'🍕 CIBO',    q:"Dove nasce la pizza Napoletana?",                       opts:["Roma","Napoli","Milano","Palermo"],a:1},
-  {cat:'🍕 CIBO',    q:"Qual è il formaggio usato nella Carbonara originale?",  opts:["Parmigiano","Pecorino Romano","Grana Padano","Emmental"],a:1},
-  {cat:'🍕 CIBO',    q:"Quante uova si usano per fare la pasta all'uovo per 4?",opts:["2","3","4","6"],a:2},
-  {cat:'🍷 VINO',    q:"In quale regione si produce il Barolo?",                opts:["Toscana","Piemonte","Veneto","Sicilia"],a:1},
-  {cat:'🍷 VINO',    q:"Da quale vitigno si produce il Barolo?",               opts:["Sangiovese","Nebbiolo","Montepulciano","Aglianico"],a:1},
-  {cat:'🍷 VINO',    q:"In che regione si produce il Brunello di Montalcino?", opts:["Veneto","Piemonte","Toscana","Calabria"],a:2},
-  {cat:'🍺 BIRRA',   q:"Da cosa si ricava principalmente la birra?",           opts:["Uva","Orzo maltato","Mais","Riso"],a:1},
-  {cat:'🍺 BIRRA',   q:"Quale Paese ha il maggior consumo di birra pro capite?",opts:["Germania","Irlanda","Repubblica Ceca","UK"],a:2},
-  {cat:'🍸 COCKTAIL',q:"Qual è l'ingrediente base del Mojito?",                opts:["Vodka","Tequila","Rum","Gin"],a:2},
-  {cat:'🍸 COCKTAIL',q:"Quali sono gli ingredienti dell'Aperol Spritz?",       opts:["Aperol+Vodka","Aperol+Prosecco+Soda","Aperol+Gin","Aperol+Rum"],a:1},
-  {cat:'🍸 COCKTAIL',q:"Cosa contiene un Negroni?",                            opts:["Gin+Campari+Vermouth","Vodka+Campari+Soda","Rum+Lime+Zucchero","Gin+Tonic+Lime"],a:0},
-  {cat:'🍸 COCKTAIL',q:"Cos'è il Cosmopolitan?",                               opts:["Vodka+Triple Sec+Mirtillo","Vodka+Mirtillo+Lime","Vodka+Triple Sec+Succo Mirtillo Rosso","Gin+Mirtillo+Tonic"],a:2},
-  // 🎬 CINEMA
-  {cat:'🎬 CINEMA',  q:"Chi ha diretto 'La Grande Bellezza'?",                 opts:["Fellini","Sorrentino","Muccino","Leone"],a:1},
-  {cat:'🎬 CINEMA',  q:"Chi interpreta Jack in Titanic?",                      opts:["Brad Pitt","Tom Cruise","Leonardo DiCaprio","Matt Damon"],a:2},
-  {cat:'🎬 CINEMA',  q:"In quale anno uscì Il Padrino?",                       opts:["1969","1972","1975","1968"],a:1},
-  {cat:'🎬 CINEMA',  q:"Chi ha diretto Pulp Fiction?",                         opts:["Scorsese","Coppola","Tarantino","Lynch"],a:2},
-  {cat:'🎬 CINEMA',  q:"Quale film ha vinto il primo Oscar della storia?",      opts:["Wings","The Artist","Sunrise","It Happened One Night"],a:0},
-  // 🎵 MUSICA
-  {cat:'🎵 MUSICA',  q:"Come si chiama il frontman dei Coldplay?",             opts:["Bono","Chris Martin","Thom Yorke","Matt Bellamy"],a:1},
-  {cat:'🎵 MUSICA',  q:"In che anno uscì 'Thriller' di Michael Jackson?",      opts:["1980","1982","1984","1981"],a:1},
-  {cat:'🎵 MUSICA',  q:"Quale band ha cantato 'Bohemian Rhapsody'?",           opts:["The Beatles","Rolling Stones","Queen","Led Zeppelin"],a:2},
-  {cat:'🎵 MUSICA',  q:"In quale città nacque Mozart?",                        opts:["Vienna","Berlino","Salisburgo","Monaco"],a:2},
-  {cat:'🎵 MUSICA',  q:"Quante corde ha una chitarra classica?",               opts:["4","5","6","7"],a:2},
-  // 🌍 GEOGRAFIA
-  {cat:'🌍 GEO',     q:"Qual è la capitale dell'Argentina?",                   opts:["Lima","Santiago","Buenos Aires","Montevideo"],a:2},
-  {cat:'🌍 GEO',     q:"Quanti stati ha l'Australia?",                         opts:["5","6","7","8"],a:1},
-  {cat:'🌍 GEO',     q:"Quale è il Paese più grande del mondo?",               opts:["Canada","USA","Cina","Russia"],a:3},
-  {cat:'🌍 GEO',     q:"In quale continente si trova il Nilo?",                opts:["Asia","Africa","Sud America","Europa"],a:1},
-  {cat:'🌍 GEO',     q:"Quale città ospita la Torre Eiffel?",                  opts:["Lione","Bordeaux","Parigi","Marsiglia"],a:2},
-  // ⚽ SPORT
-  {cat:'⚽ SPORT',   q:"Quanti Mondiali ha vinto l'Italia?",                   opts:["3","4","2","5"],a:1},
-  {cat:'⚽ SPORT',   q:"Dove si gioca Wimbledon?",                             opts:["New York","Parigi","Londra","Melbourne"],a:2},
-  {cat:'⚽ SPORT',   q:"Quanti giocatori ha una squadra di basket in campo?",  opts:["4","5","6","7"],a:1},
-  {cat:'⚽ SPORT',   q:"In quale anno si tennero le prime Olimpiadi moderne?", opts:["1896","1900","1892","1904"],a:0},
-  // 🎭 CULTURA
-  {cat:'🎭 CULTURA', q:"Chi ha scritto 'La Divina Commedia'?",                 opts:["Petrarca","Boccaccio","Dante","Leopardi"],a:2},
-  {cat:'🎭 CULTURA', q:"Quanti romanzi ha scritto Jane Austen?",               opts:["4","5","6","7"],a:2},
-  {cat:'🎭 CULTURA', q:"In quale città nacque Leonardo da Vinci?",             opts:["Firenze","Milano","Vinci","Venezia"],a:2},
-  {cat:'🎭 CULTURA', q:"Chi dipinse la Cappella Sistina?",                     opts:["Leonardo","Raffaello","Michelangelo","Donatello"],a:2},
-  // 🤣 DIVERTENTI
-  {cat:'🤣 FUN',     q:"Quante ore dorme in media un gatto al giorno?",        opts:["6-8","10-12","13-17","4-6"],a:2},
-  {cat:'🤣 FUN',     q:"Quante zampe ha un polpo?",                            opts:["6","8","10","12"],a:1},
-  {cat:'🤣 FUN',     q:"Qual è l'animale più veloce del mondo?",               opts:["Leone","Ghepardo","Aquila","Falco"],a:1},
-  {cat:'🤣 FUN',     q:"Quante ossa ha il corpo umano adulto?",                opts:["180","206","240","198"],a:1},
+const TRIVIA_Q = [
+  {cat:'🍕 CIBO',     q:"Quante calorie ha mediamente una pizza Margherita?",  opts:["500","800","1200","300"],   a:1},
+  {cat:'🍷 VINO',     q:"In quale regione si produce il Barolo?",               opts:["Toscana","Piemonte","Veneto","Sicilia"], a:1},
+  {cat:'🍺 BIRRA',    q:"Da cosa si ricava la birra?",                          opts:["Uva","Orzo/frumento","Mais","Avena"], a:1},
+  {cat:'🎬 CINEMA',   q:"Chi ha diretto 'La Grande Bellezza'?",                 opts:["Fellini","Sorrentino","Muccino","Leone"], a:1},
+  {cat:'🌍 GEOGRAFIA',q:"Qual è la capitale dell'Argentina?",                   opts:["Lima","Santiago","Buenos Aires","Montevideo"], a:2},
+  {cat:'🎵 MUSICA',   q:"Come si chiama il frontman dei Coldplay?",             opts:["Bono","Chris Martin","Thom Yorke","Matt Bellamy"], a:1},
+  {cat:'🍸 COCKTAIL', q:"Qual è l'ingrediente base del Mojito?",                opts:["Vodka","Tequila","Rum","Gin"], a:2},
+  {cat:'⚽ SPORT',    q:"Quanti Mondiali ha vinto l'Italia?",                   opts:["3","4","2","5"], a:1},
+  {cat:'🎭 CULTURA',  q:"Chi ha scritto 'La Divina Commedia'?",                 opts:["Petrarca","Boccaccio","Dante","Leopardi"], a:2},
+  {cat:'🍕 CIBO',     q:"Dove nasce la pizza Napoletana?",                      opts:["Roma","Napoli","Milano","Palermo"], a:1},
+  {cat:'🍺 BIRRA',    q:"Qual è il Paese con più consumo di birra pro capite?", opts:["Germania","Irlanda","Repubblica Ceca","UK"], a:2},
+  {cat:'🎵 MUSICA',   q:"In che anno uscì 'Thriller' di Michael Jackson?",      opts:["1980","1982","1984","1986"], a:1},
+  {cat:'🌍 GEOGRAFIA',q:"Quanti stati ha l'Australia?",                         opts:["5","6","7","8"], a:1},
+  {cat:'🎬 CINEMA',   q:"Chi interpreta Jack in Titanic?",                      opts:["Brad Pitt","Tom Cruise","Leonardo DiCaprio","Matt Damon"], a:2},
+  {cat:'🍸 COCKTAIL', q:"Quali sono gli ingredienti dell'Aperol Spritz?",       opts:["Aperol+Vodka+Lime","Aperol+Prosecco+Soda","Aperol+Gin+Tonic","Aperol+Rum+Menta"], a:1},
+  {cat:'⚽ SPORT',    q:"Dove si gioca il torneo di Wimbledon?",                opts:["New York","Parigi","Londra","Melbourne"], a:2},
 ];
 
-let tState={qIdx:0,answered:false,timer:null,tLeft:15,scores:{},streak:{},buzzed:null};
-let currentQ=null;
+let triviaState = { qIdx:0, answeredThisRound:false, timer:null, timeLeft:15, scores:{} };
 
-function initMasterTrivia(seed){
-  // Shuffle questions
-  const sq=[...TRIVIA_Q].sort(()=>Math.random()-.5);
-  TRIVIA_Q.length=0; sq.forEach(q=>TRIVIA_Q.push(q));
-  tState={qIdx:0,answered:false,timer:null,tLeft:15,scores:{},streak:{},buzzed:null};
-  teams.forEach(t=>{tState.scores[t.id]=0;tState.streak[t.id]=0;});
-  const gameArea=$('msGameArea'); if(!gameArea)return;
-  gameArea.innerHTML=`
-    <div style="display:flex;align-items:center;gap:16px;width:100%;max-width:800px;justify-content:space-between;">
-      <div style="font-size:10px;letter-spacing:5px;color:var(--gold);opacity:.7;" id="msTCat">CATEGORIA</div>
-      <div style="font-family:var(--fd);font-size:16px;color:var(--dim);" id="msTRound">1 / ${TRIVIA_Q.length}</div>
-    </div>
-    <div class="ms-question" id="msTQ" style="font-size:clamp(18px,3vw,28px);line-height:1.4;">In attesa...</div>
-    <div class="ms-answers" id="msTOpts"></div>
-    <div style="display:flex;align-items:center;gap:32px;justify-content:center;width:100%;">
-      <div>
-        <div class="big-timer" id="msTTimer">15</div>
-        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);text-align:center;margin-top:4px;" id="msBuzzName">—</div>
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;" id="msTTeamScores"></div>
+function initMasterTrivia(seed) {
+  triviaState = { qIdx:0, answeredThisRound:false, timer:null, timeLeft:15, scores:{} };
+  teams.forEach(t=>triviaState.scores[t.id]=0);
+  const ga=$('msGameArea'); if(!ga) return;
+  ga.innerHTML=`
+    <div style="font-size:10px;letter-spacing:5px;color:var(--dim);text-align:center;" id="msTriviaCat">CATEGORIA</div>
+    <div class="ms-question" id="msTriviaQ">Caricamento...</div>
+    <div class="ms-answers" id="msTriviaOpts"></div>
+    <div style="display:flex;align-items:center;gap:30px;justify-content:center;">
+      <div class="big-timer" id="msTriviaTimer">15</div>
+      <div style="text-align:center;"><div style="font-size:9px;letter-spacing:3px;color:var(--dim);">ROUND</div><div style="font-family:var(--fd);font-size:32px;color:var(--gold);" id="msTriviaRound">1/${TRIVIA_Q.length}</div></div>
     </div>`;
-  updateMsTTeamScores();
-  if(isHost) gto(()=>masterNextTrivia(),600);
+  if(isHost) setTimeout(()=>masterNextTrivia(), 500);
 }
 
-function updateMsTTeamScores(){
-  const el=$('msTTeamScores'); if(!el)return;
-  el.innerHTML=teams.map(t=>`
-    <div style="text-align:center;padding:8px 14px;background:${t.color}18;border:2px solid ${t.color}44;border-radius:12px;min-width:90px;" id="tsc_${t.id}">
-      <div style="font-size:20px;">${t.emoji}</div>
-      <div style="font-family:var(--fd);font-size:22px;color:${t.color};">${tState.scores[t.id]||0}</div>
-      <div style="font-size:9px;letter-spacing:1px;color:${t.color};opacity:.6;">${t.name.substring(0,8)}</div>
-      ${(tState.streak[t.id]||0)>=2?`<div style="font-size:10px;color:var(--gold);">🔥x${tState.streak[t.id]}</div>`:''}
-    </div>`).join('');
-}
-
-function masterNextTrivia(){
-  if(tState.qIdx>=TRIVIA_Q.length){endTriviaGame();return;}
-  currentQ=TRIVIA_Q[tState.qIdx++];
-  tState.answered=false; tState.tLeft=15; tState.buzzed=null;
-  $('msTCat').textContent=currentQ.cat;
-  $('msTQ').textContent=currentQ.q;
-  $('msTRound').textContent=tState.qIdx+' / '+TRIVIA_Q.length;
-  $('msTOpts').innerHTML=currentQ.opts.map((o,i)=>`
-    <div class="ms-answer" id="msa${i}">
-      <span style="color:var(--gold);margin-right:6px;">${String.fromCharCode(65+i)}.</span> ${o}
-    </div>`).join('');
-  const timerEl=$('msTTimer');
-  if(timerEl){timerEl.textContent=15;timerEl.className='big-timer';}
-  // Broadcast question to players
-  gMsg({type:'trivia_q', q:currentQ, round:tState.qIdx});
-  clearInterval(tState.timer);
-  tState.timer=gt(()=>{
-    tState.tLeft--;
-    if(timerEl){timerEl.textContent=tState.tLeft;if(tState.tLeft<=5)timerEl.className='big-timer urgent';}
-    if(tState.tLeft<=5&&tState.tLeft>0) tone(440+((5-tState.tLeft)*20),'sine',.06,.2);
-    if(tState.tLeft<=0){
-      clearInterval(tState.timer);
-      if(!tState.answered){
-        revealAnswer(currentQ.a);
-        gto(()=>masterNextTrivia(),3200);
-      }
+function masterNextTrivia() {
+  if(triviaState.qIdx>=TRIVIA_Q.length){endTriviaGame();return;}
+  const q=TRIVIA_Q[triviaState.qIdx++];
+  triviaState.answeredThisRound=false;
+  triviaState.timeLeft=15;
+  $('msTriviaCat').textContent=q.cat;
+  $('msTriviaQ').textContent=q.q;
+  $('msTriviaRound').textContent=triviaState.qIdx+'/'+TRIVIA_Q.length;
+  $('msTriviaOpts').innerHTML=q.opts.map((o,i)=>`<div class="ms-answer" id="msa${i}">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  gMsg({type:'trivia_q', q, round:triviaState.qIdx});
+  // Broadcast to all
+  clearInterval(triviaState.timer);
+  const timerEl=$('msTriviaTimer');
+  triviaState.timer=setInterval(()=>{
+    triviaState.timeLeft--;
+    if(timerEl){timerEl.textContent=triviaState.timeLeft;timerEl.className='big-timer'+(triviaState.timeLeft<=5?' urgent':'');}
+    tone(triviaState.timeLeft<=5?440:0,'sine',.05,.2);
+    if(triviaState.timeLeft<=0){
+      clearInterval(triviaState.timer);
+      revealTriviaAnswer(q.a);
+      setTimeout(()=>masterNextTrivia(), 3500);
     }
   },1000);
 }
 
-function revealAnswer(ai){
+function revealTriviaAnswer(correctIdx) {
   for(let i=0;i<4;i++){
-    const el=$('msa'+i); if(!el)continue;
-    el.className='ms-answer '+(i===ai?'correct':'wrong');
+    const el=$('msa'+i);if(!el)continue;
+    el.className='ms-answer '+(i===correctIdx?'correct':'wrong');
   }
-  gMsg({type:'trivia_reveal',correctIdx:ai});
   sCheer();
 }
 
-function endTriviaGame(){
-  clearInterval(tState.timer);
-  let winner=null,best=0;
-  teams.forEach(t=>{if((tState.scores[t.id]||0)>best){best=tState.scores[t.id];winner=t;}});
+function endTriviaGame() {
+  clearInterval(triviaState.timer);
+  // Find winning team by round scores
+  let winner=null, best=0;
+  teams.forEach(t=>{if((triviaState.scores[t.id]||0)>best){best=triviaState.scores[t.id];winner=t;}});
   socket.emit('game_over',{winners:winner?[winner.id]:[]});
 }
 
-function initPlayerTrivia(){
+// Player receives trivia question
+function initPlayerTrivia() {
   $('pgBody').innerHTML=`
-    <div style="font-size:9px;letter-spacing:4px;color:var(--dim);text-align:center;" id="pgTCat"></div>
-    <div class="q-text" id="pgTQ" style="text-align:center;line-height:1.5;">In attesa della domanda...</div>
-    <div class="timer-bar"><div class="timer-fill" id="pgTBar" style="width:100%;"></div></div>
-    <div class="options-grid" id="pgTOpts" style="opacity:.3;pointer-events:none;"></div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:360px;">
-      <button id="pgBuzz" onclick="playerBuzz()" style="display:none;width:100%;padding:22px;background:linear-gradient(135deg,var(--rose),#a02040);border:none;border-radius:14px;font-family:var(--fd);font-size:24px;letter-spacing:4px;color:#fff;cursor:pointer;touch-action:manipulation;box-shadow:0 0 30px rgba(232,69,106,.5);animation:buzzPulse 1s ease-in-out infinite;">🔔 BUZZ!</button>
-      <div style="font-family:var(--fd);font-size:16px;text-align:center;" id="pgTFb"></div>
-    </div>`;
-  // Add buzz animation
-  const s=document.createElement('style');
-  s.textContent='@keyframes buzzPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}';
-  document.head.appendChild(s);
+    <div class="q-text" id="pgQ">In attesa della domanda...</div>
+    <div class="timer-bar"><div class="timer-fill" id="pgTimerFill" style="width:100%"></div></div>
+    <div class="options-grid" id="pgOpts"></div>
+    <div style="font-family:var(--fd);font-size:13px;color:var(--dim);text-align:center;" id="pgFeedback"></div>`;
 }
 
-let playerAnswered=false, playerBuzzed=false, pCurrentQ=null, pTriviaTimer=null;
-
-gmh['trivia_q']=(msg)=>{
-  if(isHost)return;
-  pCurrentQ=msg.q; playerAnswered=false; playerBuzzed=false;
-  $('pgTCat').textContent=msg.q.cat;
-  $('pgTQ').textContent=msg.q.q;
-  $('pgTFb').textContent='';
-  // Show options but disabled until buzz
-  $('pgTOpts').style.opacity='.3'; $('pgTOpts').style.pointerEvents='none';
-  $('pgTOpts').innerHTML=msg.q.opts.map((o,i)=>`
-    <div class="opt-btn" id="popt${i}" onclick="answerTrivia(${i})">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
-  // Show buzz button
-  const buzz=$('pgBuzz'); if(buzz)buzz.style.display='block';
-  // Timer bar animation
-  const bar=$('pgTBar');
-  if(bar){bar.style.transition='none';bar.style.width='100%';bar.style.background='linear-gradient(90deg,var(--teal),var(--gold))';
-    void bar.offsetWidth; bar.style.transition='width 15s linear';bar.style.width='0%';}
-  // Local countdown
-  let t=15; $('pgTimer').textContent=t;
-  clearInterval(pTriviaTimer);
-  pTriviaTimer=setInterval(()=>{t--;$('pgTimer').textContent=t;if(t<=5)$('pgTimer').style.color='var(--rose)';else $('pgTimer').style.color='';if(t<=0)clearInterval(pTriviaTimer);},1000);
+let playerTriviaTimer=null, playerAnswered=false, currentTriviaQ=null;
+gameMsgHandlers['trivia_q']=(msg)=>{
+  if(isHost) return; // master handles separately
+  currentTriviaQ=msg.q; playerAnswered=false;
+  $('pgQ').textContent=msg.q.q;
+  $('pgFeedback').textContent='';
+  $('pgTimerFill').style.transition='none';$('pgTimerFill').style.width='100%';
+  $('pgTimerFill').style.background='linear-gradient(90deg,var(--teal),var(--gold))';
+  void $('pgTimerFill').offsetWidth;
+  $('pgTimerFill').style.transition='width 15s linear';$('pgTimerFill').style.width='0%';
+  $('pgOpts').innerHTML=msg.q.opts.map((o,i)=>`<div class="opt-btn" id="popt${i}" onclick="answerTrivia(${i})" style="touch-action:manipulation;">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  clearTimeout(playerTriviaTimer);
+  playerTriviaTimer=setTimeout(()=>{if(!playerAnswered){$('pgFeedback').textContent='⏰ TEMPO!';$('pgFeedback').style.color='var(--rose)';sFail();}},15000);
+  // Timer countdown in pg-timer
+  let t=15;$('pgTimer').textContent=t;
+  const iv=setInterval(()=>{t--;$('pgTimer').textContent=t;if(t<=0)clearInterval(iv);},1000);
 };
 
-function playerBuzz(){
-  if(playerBuzzed||playerAnswered||!pCurrentQ)return;
-  playerBuzzed=true;
-  const buzz=$('pgBuzz'); if(buzz)buzz.style.display='none';
-  // Enable options
-  $('pgTOpts').style.opacity='1'; $('pgTOpts').style.pointerEvents='all';
-  $('pgTFb').textContent='⚡ BUZZA! Scegli la risposta!';$('pgTFb').style.color='var(--gold)';
-  sBuzz(); vib([30,10,60]);
-  gMsg({type:'trivia_buzz',teamId:myTeamId,playerId:myId,name:players[myId]?.name||'?'});
-}
-
-function answerTrivia(idx){
-  if(playerAnswered||!pCurrentQ)return;
-  playerAnswered=true; clearInterval(pTriviaTimer);
-  const bar=$('pgTBar'); if(bar){bar.style.transition='none';bar.style.width='0%';}
-  const correct=idx===pCurrentQ.a;
+function answerTrivia(idx) {
+  if(playerAnswered||!currentTriviaQ)return;
+  playerAnswered=true;
+  clearTimeout(playerTriviaTimer);
+  $('pgTimerFill').style.transition='none';$('pgTimerFill').style.width='0%';
+  const correct=idx===currentTriviaQ.a;
   const el=$('popt'+idx); if(el)el.classList.add(correct?'correct':'wrong');
-  const correctEl=$('popt'+pCurrentQ.a); if(correctEl&&!correct)correctEl.classList.add('correct');
-  $('pgBuzz').style.display='none';
-  // Disable all options
-  $('pgTOpts').style.pointerEvents='none';
   if(correct){
-    const pts=playerBuzzed?15:10;
+    const pts=10;
     myRoundScore+=pts; $('pgScore').textContent=myRoundScore;
     socket.emit('update_score',{score:myRoundScore});
-    gMsg({type:'trivia_answer',correct:true,idx,teamId:myTeamId,playerId:myId,name:players[myId]?.name||'?',pts});
-    $('pgTFb').textContent='✅ CORRETTO! +'+pts;$('pgTFb').style.color='var(--teal)';
-    sOk(); vib(60);
-    spawnPtsPop('+'+pts, teams.find(t=>t.id===myTeamId)?.color);
+    gMsg({type:'trivia_answer',correct:true,teamId:myTeamId,playerId:myId});
+    $('pgFeedback').textContent='✅ CORRETTO! +'+pts;$('pgFeedback').style.color='var(--teal)';
+    sSuccess(); vib(60); spawnPtsPop('+'+pts,teams.find(t=>t.id===myTeamId)?.color);
+    // Show correct answer for wrong options
+    for(let i=0;i<4;i++){if(i!==idx&&i===currentTriviaQ.a){const e=$('popt'+i);if(e)e.classList.add('correct');}}
   } else {
-    gMsg({type:'trivia_answer',correct:false,idx,teamId:myTeamId,playerId:myId,name:players[myId]?.name||'?',pts:0});
-    $('pgTFb').textContent='❌ '+pCurrentQ.opts[pCurrentQ.a]; $('pgTFb').style.color='var(--rose)';
+    $('pgFeedback').textContent='❌ '+currentTriviaQ.opts[currentTriviaQ.a];$('pgFeedback').style.color='var(--rose)';
     sFail(); vib([100,50,100]);
+    const ce=$('popt'+currentTriviaQ.a);if(ce)ce.classList.add('correct');
   }
 }
 
-gmh['trivia_buzz']=(msg)=>{
+gameMsgHandlers['trivia_answer']=(msg)=>{
   if(!isHost)return;
   const t=teams.find(t=>t.id===msg.teamId);
-  if(t&&!tState.buzzed){
-    tState.buzzed=msg.playerId;
-    const nameEl=$('msBuzzName');
-    if(nameEl) nameEl.textContent='🔔 '+msg.name+' ('+t.name+')';
-    fx('🔔 '+msg.name+' BUZZA!',t.color);
-    sBuzz();
-    // Highlight the buzzing team score card
-    document.querySelectorAll('[id^="tsc_"]').forEach(el=>el.style.transform='');
-    const tsc=$('tsc_'+t.id); if(tsc){tsc.style.transform='scale(1.15)';tsc.style.borderColor=t.color; setTimeout(()=>{if(tsc)tsc.style.transform='';},3000);}
-  } else if(tState.buzzed && msg.playerId!==tState.buzzed) {
-    // Tell the late buzzer they were too slow
-    gMsg({type:'trivia_buzz_late', playerId: msg.playerId});
-  }
-};
-
-gmh['trivia_answer']=(msg)=>{
-  if(!isHost)return;
-  if(!msg.correct) return;
-  if(tState.answered)return; // first correct answer wins
-  tState.answered=true;
-  const t=teams.find(t=>t.id===msg.teamId);
-  if(!t)return;
-  tState.scores[msg.teamId]=(tState.scores[msg.teamId]||0)+msg.pts;
-  tState.streak[msg.teamId]=(tState.streak[msg.teamId]||0)+1;
-  // Reset streak of all other teams on a wrong question
-  teams.forEach(ot=>{ if(ot.id!==msg.teamId) tState.streak[ot.id]=0; });
-  // Streak bonus
-  if(tState.streak[msg.teamId]===3){ tState.scores[msg.teamId]+=5; fx('🔥 STREAK x3! '+t.name+' +5 BONUS',t.color); tState.streak[msg.teamId]=0; }
-  revealAnswer(currentQ.a);
-  clearInterval(tState.timer);
-  // Award points on server too
-  socket.emit('judge_award',{teamId:msg.teamId,pts:msg.pts,reason:'Trivia corretto!'});
-  updateMsTTeamScores();
-  spawnPtsPop('+'+msg.pts, t.color);
-  fx('⚡ '+msg.name+' CORRETTO! +'+msg.pts, t.color);
-  gto(()=>masterNextTrivia(),3000);
-};
-
-gmh['trivia_buzz_late']=(msg)=>{
-  if(isHost)return;
-  if(msg.playerId!==myId)return;
-  $('pgTFb').textContent='⏱ Troppo tardi! Qualcuno ha già buzzato'; $('pgTFb').style.color='var(--rose)';
-  vib(30);
-};
-  if(isHost)return;
-  const bar=$('pgTBar'); if(bar){bar.style.transition='none';bar.style.width='0%';}
-  clearInterval(pTriviaTimer);
-  $('pgTimer').textContent='';
-  for(let i=0;i<4;i++){const el=$('popt'+i);if(el)el.className='opt-btn '+(i===msg.correctIdx?'correct':'wrong');}
-  const buzz=$('pgBuzz');if(buzz)buzz.style.display='none';
-};
-
-// ═══════════════════════════════════════════
-//  ══ 🎨 DISEGNA UBRIACO ══
-//  - Parole assurde e divertenti
-//  - Canvas fluido su tutti i dispositivi
-//  - Master vede il disegno in tempo reale su TV
-//  - Tutti gli altri players vedono sul loro telefono
-//  - Chi indovina guadagna punti proporzionali al tempo
-//  - Drawer guadagna punti per ogni indovino
-//  - Hint disponibile (costa -3 pts alla squadra)
-// ═══════════════════════════════════════════
-const DRAW_WORDS=[
-  // Azioni assurde
-  'NONNA CHE FA PARKOUR','POLPO CHE SUONA LA BATTERIA','GATTO CHE GUIDA UN TRENO',
-  'SINDACO CHE BALLA LA MACARENA','PAPA CHE FA SKATEBOARD','MEDICO CHE CANTA OPERA',
-  'POLIZIOTTO CHE MANGIA SPAGHETTI','PROFESSORESSA DI YOGA',
-  // Oggetti impossibili
-  'PIZZA VOLANTE','SPAGHETTI GIGANTE','HAMBURGER CON LE GAMBE',
-  'TELEFONO CHE PIANGE','SEDIA CHE VOLA','MACCHINA CHE MANGIA',
-  // Animali strani
-  'DINOSAURO HIPSTER','ORSO BARISTA','TARTARUGA RAPPER','PINGUINO CHEF',
-  'ELEFANTE BALLERINO','COCCODRILLO YOGA','GIRAFFA DOTTORE','POLPO DJ',
-  // Personaggi
-  'ASTRONAUTA IN DISCOTECA','VAMPIRO IN SPIAGGIA','FANTASMA INNAMORATO',
-  'ROBOT CHE CUCINA','MAGO STANCO','PIRATA IN METRO','COWBOY IN CENTRO',
-  // Situazioni
-  'LUMACA SUL MOTORINO','BANANA SUPEREROE','CACTUS CHE BALLA',
-  'GELATO CHE PIANGE','FORCHETTA CHE CORRE','SCARPE CHE VOLANO',
-];
-
-let dState={word:'',drawerId:null,round:0,maxR:0,timer:null,tLeft:40,guessed:false};
-let dCtx=null;
-
-function initMasterDraw(seed){
-  _drawSeed=seed||0;
-  dState={word:'',drawerId:null,round:0,maxR:Math.max(1,Object.values(players).filter(p=>!p.isScreen).length),timer:null,tLeft:60,guessed:false};
-  const gameArea=$('msGameArea'); if(!gameArea)return;
-  gameArea.innerHTML=`
-    <div style="display:flex;align-items:center;gap:16px;width:100%;max-width:800px;justify-content:space-between;flex-wrap:wrap;">
-      <div style="font-size:9px;letter-spacing:4px;color:var(--dim);">DISEGNA UBRIACO 🎨</div>
-      <div style="font-family:var(--fd);font-size:14px;color:var(--dim);" id="msDRound">Round 1/${dState.maxR}</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:800px;">
-      <canvas id="msDrCanvas" class="draw-canvas-ms" style="flex:1;min-width:280px;max-width:380px;height:min(380px,50vw);"></canvas>
-      <div style="display:flex;flex-direction:column;gap:12px;min-width:180px;">
-        <div class="big-timer" id="msDrawTimer">60</div>
-        <div style="text-align:center;">
-          <div style="font-size:9px;letter-spacing:3px;color:var(--dim);">DISEGNA</div>
-          <div style="font-family:var(--fd);font-size:20px;" id="msDrawerName">---</div>
-        </div>
-        <div id="msDrawWordHint" style="font-size:10px;letter-spacing:2px;color:var(--dim);text-align:center;"></div>
-        <div class="guess-feed" id="msGuessFeed"></div>
-        <div id="msDrawTeamScores" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
-    </div>`;
-  const c=$('msDrCanvas');
-  c.width=380;c.height=380;
-  dCtx=c.getContext('2d');
-  dCtx.fillStyle='#12090e';dCtx.fillRect(0,0,380,380);
-  _drawGrid(dCtx,380,380);
-  updateDrawTeamScores();
-  if(isHost) gto(()=>masterNextDraw(seed),500);
-}
-
-function _drawGrid(ctx,w,h){
-  ctx.strokeStyle='rgba(212,168,71,.06)';ctx.lineWidth=1;
-  for(let i=0;i<w;i+=38){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();}
-  for(let i=0;i<h;i+=38){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(w,i);ctx.stroke();}
-}
-
-function updateDrawTeamScores(){
-  const el=$('msDrawTeamScores'); if(!el)return;
-  el.innerHTML=[...teams].sort((a,b)=>(b.score||0)-(a.score||0)).map(t=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${t.color}18;border-radius:8px;border:1px solid ${t.color}33;">
-      <span style="font-size:16px;">${t.emoji}</span>
-      <span style="font-family:var(--fd);font-size:13px;color:${t.color};flex:1;">${t.name}</span>
-      <span style="font-family:var(--fd);font-size:18px;color:${t.color};">${t.score||0}</span>
-    </div>`).join('');
-}
-
-function masterNextDraw(seed){
-  if(dState.round>=dState.maxR){endDrawGame();return;}
-  dState.round++;
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  const drawer=nonScreen[(dState.round-1)%nonScreen.length];
-  const wi=Math.abs(((seed||1)+dState.round*7919)*31)%DRAW_WORDS.length;
-  const word=DRAW_WORDS[wi];
-  dState.word=word.toLowerCase(); dState.drawerId=drawer?.id; dState.tLeft=60; dState.guessed=false;
-  // Clear canvas
-  if(dCtx){dCtx.fillStyle='#12090e';dCtx.fillRect(0,0,380,380);_drawGrid(dCtx,380,380);}
-  const dnEl=$('msDrawerName');
-  if(dnEl){dnEl.textContent=drawer?.name||'???'; dnEl.style.color=drawer?.color||'var(--cream)';}
-  $('msDRound').textContent='Round '+dState.round+'/'+dState.maxR;
-  $('msGuessFeed').innerHTML='';
-  // Show letter count hint on master TV (NOT the word)
-  const hintEl=$('msDrawWordHint');
-  if(hintEl) hintEl.textContent=word.split(' ').map(w=>'□'.repeat(w.length)).join('  ');
-  gMsg({type:'draw_round',drawerId:drawer?.id,drawerName:drawer?.name||'?',word,round:dState.round,total:dState.maxR});
-  clearInterval(dState.timer);
-  const timerEl=$('msDrawTimer');
-  if(timerEl){timerEl.textContent=60;timerEl.className='big-timer';}
-  dState.timer=gt(()=>{
-    dState.tLeft--;
-    if(timerEl){timerEl.textContent=dState.tLeft;timerEl.className='big-timer'+(dState.tLeft<=10?' urgent':'');}
-    if(dState.tLeft<=0){clearInterval(dState.timer);gto(()=>masterNextDraw(seed),1500);}
-  },1000);
-}
-
-function endDrawGame(){
-  clearInterval(dState.timer);
-  let winner=null,best=0;
-  teams.forEach(t=>{if((t.score||0)>best){best=t.score;winner=t;}});
-  socket.emit('game_over',{winners:winner?[winner.id]:[]});
-}
-
-function initPlayerDraw(){
-  $('pgBody').innerHTML=`
-    <div style="font-size:9px;letter-spacing:4px;color:var(--dim);text-align:center;" id="pgDRole">In attesa...</div>
-    <div class="draw-word-display" id="pgDWord" style="min-height:36px;"></div>
-    <canvas id="pgDrCanvas" class="draw-canvas-player" style="height:clamp(180px,50vw,260px);"></canvas>
-    <div class="draw-tools" id="pgDTools" style="display:none;"></div>
-    <div class="guess-input-row" id="pgDGuessRow" style="display:none;">
-      <input class="guess-input" id="pgDInput" placeholder="Cosa vedi? Scrivi qui..." maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="off">
-      <button class="btn btn-gold" onclick="sendDrawGuess()" style="width:auto;padding:12px 16px;flex-shrink:0;touch-action:manipulation;">✓</button>
-    </div>
-    <div style="font-family:var(--fd);font-size:18px;text-align:center;min-height:28px;" id="pgDFb"></div>`;
-  const inp=$('pgDInput');
-  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendDrawGuess();});
-}
-
-let isDrawer=false, drawGuessedOk=false, pDrawWord='';
-
-gmh['draw_round']=(msg)=>{
-  isDrawer=(msg.drawerId===myId); drawGuessedOk=false;
-  pDrawWord=msg.word.toLowerCase();
-  $('pgDRole').textContent=isDrawer?`✏️ TOCCA A TE — Round ${msg.round}/${msg.total}`:`🔍 INDOVINA IL DISEGNO — Round ${msg.round}/${msg.total}`;
-  if(isDrawer){
-    $('pgDWord').textContent=msg.word.toUpperCase();
-    $('pgDWord').style.color='var(--gold)';
-  } else {
-    // Show letter count
-    $('pgDWord').textContent=msg.word.split(' ').map(w=>'_ '.repeat(w.length).trim()).join('  ');
-    $('pgDWord').style.color='var(--dim)';
-  }
-  $('pgDTools').style.display=isDrawer?'flex':'none';
-  $('pgDGuessRow').style.display=isDrawer?'none':'flex';
-  $('pgDFb').textContent='';
-  // Timer in HUD
-  let t=40;$('pgTimer').textContent=t;$('pgTimer').style.color='';
-  const tiv=gt(()=>{t--;$('pgTimer').textContent=t;if(t<=10)$('pgTimer').style.color='var(--rose)';if(t<=0)clearInterval(tiv);},1000);
-  setupPlayerDrawCanvas();
-};
-
-function setupPlayerDrawCanvas(){
-  const c=$('pgDrCanvas'); if(!c)return;
-  c.width=c.offsetWidth||340; c.height=parseInt(c.style.height)||220;
-  const ctx=c.getContext('2d');
-  ctx.fillStyle='#12090e'; ctx.fillRect(0,0,c.width,c.height);
-  // Grid
-  ctx.strokeStyle='rgba(212,168,71,.05)';ctx.lineWidth=1;
-  for(let i=0;i<c.width;i+=34){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,c.height);ctx.stroke();}
-  for(let i=0;i<c.height;i+=34){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(c.width,i);ctx.stroke();}
-  if(!isDrawer){
-    ctx.fillStyle='rgba(212,168,71,.15)';ctx.font='14px "Space Mono"';ctx.textAlign='center';
-    ctx.fillText('Il disegno apparirà qui',c.width/2,c.height/2);
-    return;
-  }
-  // Colors palette
-  const cols=['#ffffff','#ff2752','#00e5ff','#ffe600','#00ff88','#ff7a00','#cc44ff','#000000'];
-  $('pgDTools').innerHTML=cols.map((col,i)=>`
-    <div class="color-dot ${i===0?'active':''}" style="background:${col};${col==='#000000'?'border:1px solid rgba(255,255,255,.2)':''}" onclick="pDSetCol('${col}',this)"></div>
-  `).join('')+
-  `<button class="size-btn" onclick="pDSetSz(3)">S</button>
-   <button class="size-btn" onclick="pDSetSz(6)">M</button>
-   <button class="size-btn" onclick="pDSetSz(12)">L</button>
-   <button class="size-btn" onclick="pDSetSz(20)">XL</button>
-   <button class="size-btn" style="color:var(--rose);" onclick="pDClear()">🗑</button>`;
-  let drawing=false,lx=0,ly=0,col='#fff',sz=6;
-  const draw=e=>{
-    if(!drawing)return; e.preventDefault();
-    const r=c.getBoundingClientRect(),t2=e.touches?e.touches[0]:e;
-    const x=t2.clientX-r.left,y=t2.clientY-r.top;
-    ctx.strokeStyle=col;ctx.lineWidth=sz;ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);ctx.stroke();
-    gMsg({type:'draw_stroke',x1:lx/c.width,y1:ly/c.height,x2:x/c.width,y2:y/c.height,col,sz});
-    lx=x;ly=y;
-  };
-  c.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;const r=c.getBoundingClientRect(),t2=e.touches[0];lx=t2.clientX-r.left;ly=t2.clientY-r.top;},{passive:false});
-  c.addEventListener('touchmove',draw,{passive:false});
-  c.addEventListener('touchend',()=>drawing=false,{passive:false});
-  c.addEventListener('mousedown',e=>{drawing=true;const r=c.getBoundingClientRect();lx=e.clientX-r.left;ly=e.clientY-r.top;});
-  c.addEventListener('mousemove',draw);
-  c.addEventListener('mouseup',()=>drawing=false);
-  c._sc=v=>{col=v;}; c._ss=v=>{sz=v;};
-  c._cl=()=>{ctx.fillStyle='#12090e';ctx.fillRect(0,0,c.width,c.height);gMsg({type:'draw_stroke',clear:true});};
-}
-function pDSetCol(col,el){const c=$('pgDrCanvas');if(c._sc)c._sc(col);document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));if(el)el.classList.add('active');}
-function pDSetSz(sz){const c=$('pgDrCanvas');if(c._ss)c._ss(sz);}
-function pDClear(){const c=$('pgDrCanvas');if(c._cl)c._cl();}
-
-function sendDrawGuess(){
-  if(drawGuessedOk||isDrawer)return;
-  const inp=$('pgDInput'); if(!inp)return;
-  const guess=inp.value.trim().toLowerCase(); if(!guess||guess.length<2)return;
-  inp.value='';
-  // Check locally
-  const correct=guess===pDrawWord||(pDrawWord.includes(guess)&&guess.length>=4);
-  gMsg({type:'draw_guess',guess,playerId:myId,teamId:myTeamId,name:players[myId]?.name||'?',correct});
-  if(correct){
-    drawGuessedOk=true;
-    $('pgDFb').textContent='🎉 INDOVINATO!';$('pgDFb').style.color='var(--teal)';
-    $('pgDInput').disabled=true;
-    sOk();vib([60,30,120]);
-    spawnPtsPop('+pts',teams.find(t=>t.id===myTeamId)?.color);
-  }
-}
-
-gmh['draw_word_reveal']=(msg)=>{
-  if(isHost)return;
-  const fbEl=$('pgDFb');
-  if(fbEl&&!drawGuessedOk){ fbEl.textContent='Era: '+msg.word; fbEl.style.color='var(--dim)'; }
-  const wEl=$('pgDWord');
-  if(wEl){ wEl.textContent=msg.word; wEl.style.color='var(--rose)'; }
-};
-  // Render on master screen
-  if(isHost){
-    if(!dCtx)return;
-    if(msg.clear){dCtx.fillStyle='#12090e';dCtx.fillRect(0,0,380,380);_drawGrid(dCtx,380,380);return;}
-    dCtx.strokeStyle=msg.col;dCtx.lineWidth=msg.sz;dCtx.lineCap='round';dCtx.lineJoin='round';
-    dCtx.beginPath();dCtx.moveTo(msg.x1*380,msg.y1*380);dCtx.lineTo(msg.x2*380,msg.y2*380);dCtx.stroke();
-  } else if(!isDrawer) {
-    // Other players see the drawing too
-    const c=$('pgDrCanvas'); if(!c)return; const ctx=c.getContext('2d');
-    if(msg.clear){ctx.fillStyle='#12090e';ctx.fillRect(0,0,c.width,c.height);return;}
-    ctx.strokeStyle=msg.col;ctx.lineWidth=Math.max(1,msg.sz*(c.width/380));ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.beginPath();ctx.moveTo(msg.x1*c.width,msg.y1*c.height);ctx.lineTo(msg.x2*c.width,msg.y2*c.height);ctx.stroke();
-  }
-};
-
-let _drawSeed=0;
-gmh['draw_guess']=(msg)=>{
-  if(!isHost)return;
-  const t=teams.find(t=>t.id===msg.teamId);
-  // Add to guess feed on master
-  const feed=$('msGuessFeed');
-  if(feed){
-    const row=document.createElement('div');
-    row.className='guess-row'+(msg.correct?' guess-correct':'');
-    row.innerHTML=`<span style="color:${t?.color||'var(--cream)'};">${msg.name}:</span> <span>${msg.guess}</span>${msg.correct?' ✅':''}`;
-    feed.insertBefore(row,feed.firstChild);
-    if(feed.children.length>6)feed.removeChild(feed.lastChild);
-  }
-  if(msg.correct&&!dState.guessed){
-    dState.guessed=true;
-    const pts=dState.tLeft>40?20:dState.tLeft>25?15:10;
-    socket.emit('judge_award',{teamId:msg.teamId,pts,reason:'Ha indovinato!'});
-    // Drawer also gets points
-    const drawer=players[dState.drawerId];
-    if(drawer?.teamId) socket.emit('judge_award',{teamId:drawer.teamId,pts:5,reason:'Disegno indovinato!'});
-    fx('🎨 '+msg.name+' HA INDOVINATO! +'+pts,t?.color||'var(--gold)');
-    sCheer();
-    clearInterval(dState.timer);
-    // Reveal word to all
-    gMsg({type:'draw_word_reveal', word: dState.word.toUpperCase()});
-    updateDrawTeamScores();
-    gto(()=>masterNextDraw(_drawSeed),3000);
-  }
-};
-
-// ═══════════════════════════════════════════
-//  ══ 🔮 TRUTH OR DARE ══
-//  - 3 livelli: Mild / Piccante / Estremo
-//  - L'host sceglie il livello
-//  - Una persona per volta legge la sfida
-//  - Il gruppo vota se l'ha completata (👍/👎)
-//  - Punti per chi completa + punti a chi vota correttamente
-// ═══════════════════════════════════════════
-const TRUTH_DARE={
-  truth:{
-    mild:[
-      "Qual è la cosa più imbarazzante che ti è successa di recente?",
-      "Hai mai spiato il telefono di qualcuno?",
-      "Qual è il tuo più grande rimpianto?",
-      "Hai mai fatto finta di non essere a casa?",
-      "Qual è la bugia più grande che hai detto?",
-      "Hai mai rubato qualcosa, anche di piccolo?",
-      "Qual è la cosa di te che nessuno sa?",
-    ],
-    spicy:[
-      "Chi ti piace di più tra le persone presenti?",
-      "Qual è la cosa più strana che hai fatto per attirare l'attenzione di qualcuno?",
-      "Hai mai scritto un messaggio sbagliato alla persona sbagliata?",
-      "Qual è la tua scusa più creativa per non uscire?",
-      "Hai mai finto di dormire per evitare qualcuno?",
-    ],
-    extreme:[
-      "Mostra le ultime 5 foto della tua galleria!",
-      "Leggi ad alta voce l'ultimo messaggio che hai mandato!",
-      "Fai vedere la tua ricerca Google più recente!",
-      "Quale persona presente chiameresti alle 3 di notte in un'emergenza?",
-    ]
-  },
-  dare:{
-    mild:[
-      "Fai 10 salti con gli sci!",
-      "Canta il ritornello di una canzone a caso!",
-      "Fai una foto con una faccia brutta e mostrala!",
-      "Parla con l'accento di un'altra regione per 2 minuti!",
-      "Fai il verso di 3 animali diversi!",
-      "Balla da solo per 15 secondi!",
-    ],
-    spicy:[
-      "Scrivi un messaggio romantico alla prima persona nella tua rubrica!",
-      "Fai una chiamata a qualcuno e di' solo 'Ti penso'!",
-      "Mostra il tuo feed Instagram!",
-      "Manda un emoji a caso al tuo ex!",
-      "Chiama il tuo migliore amico e digli che hai qualcosa di importante da dire... poi di' che era per salutare!",
-    ],
-    extreme:[
-      "Fai 5 flessioni adesso!",
-      "Finisci il tuo drink in un sorso!",
-      "Chiama un numero a caso dalla rubrica e di' di aver vinto un premio!",
-      "Posta una storia su Instagram con una faccia strana!",
-    ]
-  }
-};
-
-let truthState={level:'mild',round:0,currentPerson:null,type:'',text:'',timer:null,votes:{}};
-
-function initMasterTruth(seed){
-  truthState={level:'mild',round:0,currentPerson:null,type:'',text:'',timer:null,votes:{}};
-  const gameArea=$('msGameArea'); if(!gameArea)return;
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  gameArea.innerHTML=`
-    <div style="font-size:10px;letter-spacing:4px;color:var(--gold);text-align:center;">🔮 TRUTH OR DARE</div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button onclick="setTruthLevel('mild',this)" class="btn btn-ghost" style="width:auto;padding:10px 16px;font-size:12px;border-color:var(--teal);color:var(--teal);touch-action:manipulation;" id="tbl_mild">😊 MILD</button>
-      <button onclick="setTruthLevel('spicy',this)" class="btn btn-ghost" style="width:auto;padding:10px 16px;font-size:12px;touch-action:manipulation;" id="tbl_spicy">🌶️ PICCANTE</button>
-      <button onclick="setTruthLevel('extreme',this)" class="btn btn-ghost" style="width:auto;padding:10px 16px;font-size:12px;touch-action:manipulation;" id="tbl_extreme">💥 ESTREMO</button>
-    </div>
-    <div class="ms-question" id="msTDCard" style="font-size:clamp(16px,3vw,24px);min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;">Premi AVANTI per iniziare!</div>
-    <div style="display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;">
-      <div style="text-align:center;padding:12px 20px;background:var(--s2);border-radius:12px;border:1px solid rgba(255,255,255,.08);">
-        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);">TOCCA A</div>
-        <div style="font-family:var(--fd);font-size:24px;" id="msTDPerson">---</div>
-      </div>
-      <div id="msTDVotes" style="display:flex;gap:8px;"></div>
-    </div>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <button onclick="masterNextTruth()" class="btn btn-gold" style="width:auto;padding:14px 24px;touch-action:manipulation;">▶ AVANTI</button>
-      <button onclick="masterAwardTruth(true)" class="btn btn-teal" style="width:auto;padding:14px 24px;font-size:13px;display:none;touch-action:manipulation;" id="msTDAward">✅ HA FATTO</button>
-    </div>`;
-  setTruthLevel('mild',$('tbl_mild'));
-}
-
-function setTruthLevel(lvl,btn){
-  truthState.level=lvl;
-  document.querySelectorAll('[id^="tbl_"]').forEach(b=>{b.style.background='';b.style.opacity='.6';});
-  if(btn){btn.style.background='rgba(255,255,255,.1)';btn.style.opacity='1';}
-}
-
-function masterNextTruth(){
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  if(nonScreen.length===0){toast('⚠️ Nessun giocatore');return;}
-  truthState.round++;
-  const person=nonScreen[(truthState.round-1)%nonScreen.length];
-  truthState.currentPerson=person.id;
-  const type=Math.random()<.5?'truth':'dare';
-  const lvl=truthState.level;
-  const pool=TRUTH_DARE[type][lvl];
-  const text=pool[Math.floor(Math.random()*pool.length)];
-  truthState.type=type; truthState.text=text; truthState.votes={};
-  _truthVotes={yes:0,no:0};
-  const badge=type==='truth'?'💬 VERITÀ':'🎯 SFIDA';
-  const color=type==='truth'?'var(--teal)':'var(--rose)';
-  $('msTDCard').innerHTML=`<div><div style="font-size:11px;letter-spacing:4px;color:${color};margin-bottom:10px;">${badge}</div><div>${text}</div></div>`;
-  $('msTDCard').style.borderColor=color;
-  $('msTDPerson').textContent=person.name;
-  $('msTDPerson').style.color=person.color;
-  const vEl=$('msTDVotes'); if(vEl) vEl.innerHTML='';
-  const awardBtn=$('msTDAward'); if(awardBtn)awardBtn.style.display='block';
-  gMsg({type:'truth_card',personId:person.id,cardType:type,text,level:lvl});
-  tone(type==='truth'?440:880,'sine',.2,.4); vib(40);
-}
-
-function masterAwardTruth(completed){
-  if(!truthState.currentPerson)return;
-  if(completed){
-    const p=players[truthState.currentPerson];
-    if(p?.teamId){socket.emit('judge_award',{teamId:p.teamId,pts:10,reason:truthState.type==='truth'?'Verità detta!':'Sfida completata!'});}
-    sCheer(); vib([60,30,120]);
-    fx('🎉 BIS! +10 punti','var(--gold)');
-  }
-  $('msTDAward').style.display='none';
-}
-
-function initPlayerTruth(){
-  $('pgBody').innerHTML=`
-    <div class="wait-pulse" style="font-size:50px;" id="pgTrEmoji">🔮</div>
-    <div style="font-family:var(--fd);font-size:18px;color:var(--gold);text-align:center;" id="pgTrTitle">TRUTH OR DARE</div>
-    <div id="pgTrCard" style="background:var(--s2);border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:22px;width:100%;max-width:360px;text-align:center;display:none;">
-      <div style="font-size:11px;letter-spacing:4px;margin-bottom:10px;" id="pgTrType">---</div>
-      <div style="font-family:var(--fd);font-size:18px;line-height:1.5;" id="pgTrText">---</div>
-    </div>
-    <div id="pgTrMine" style="display:none;font-size:10px;letter-spacing:2px;color:var(--rose);text-align:center;">⚡ TOCCA A TE!</div>
-    <div id="pgTrVoteBtns" style="display:none;flex-direction:column;gap:8px;width:100%;max-width:320px;align-items:center;">
-      <div style="font-size:9px;letter-spacing:3px;color:var(--dim);">HA COMPLETATO LA SFIDA?</div>
-      <div style="display:flex;gap:12px;width:100%;">
-        <button onclick="castTruthVote(true)" class="btn btn-teal" style="flex:1;font-size:20px;padding:18px;touch-action:manipulation;">👍</button>
-        <button onclick="castTruthVote(false)" class="btn btn-rose" style="flex:1;font-size:20px;padding:18px;touch-action:manipulation;">👎</button>
-      </div>
-      <div style="font-size:11px;color:var(--dim);" id="pgTrVoteFb"></div>
-    </div>`;
-}
-
-let _truthVoted=false;
-function castTruthVote(yes){
-  if(_truthVoted)return; _truthVoted=true;
-  document.querySelectorAll('#pgTrVoteBtns .btn').forEach(b=>{b.style.opacity='.4';b.style.pointerEvents='none';});
-  gMsg({type:'truth_vote',yes,voterId:myId});
-  $('pgTrVoteFb').textContent=yes?'✅ Votato sì!':'❌ Votato no!';
-  sOk(); vib(30);
-}
-
-gmh['truth_card']=(msg)=>{
-  if(isHost)return;
-  _truthVoted=false;
-  const card=$('pgTrCard'); if(!card)return;
-  card.style.display='block';
-  const type=msg.cardType==='truth'?'💬 VERITÀ':'🎯 SFIDA';
-  const color=msg.cardType==='truth'?'var(--teal)':'var(--rose)';
-  $('pgTrType').textContent=type; $('pgTrType').style.color=color;
-  $('pgTrText').textContent=msg.text;
-  card.style.borderColor=color;
-  const isMe=msg.personId===myId;
-  $('pgTrMine').style.display=isMe?'block':'none';
-  const voteEl=$('pgTrVoteBtns');
-  if(voteEl){
-    // Non-subjects vote; subject can't vote on themselves
-    voteEl.style.display=isMe?'none':'flex';
-    if(!isMe){
-      // Reset vote buttons
-      voteEl.querySelectorAll('.btn').forEach(b=>{b.style.opacity='1';b.style.pointerEvents='all';});
-      const fbEl=$('pgTrVoteFb'); if(fbEl)fbEl.textContent='';
+  if(t&&msg.correct){
+    triviaState.scores[msg.teamId]=(triviaState.scores[msg.teamId]||0)+10;
+    if(!triviaState.answeredThisRound){
+      triviaState.answeredThisRound=true;
+      fx('⚡ '+t.name+' RISPONDE PRIMO!',t.color);
+      // Highlight correct answer
+      revealTriviaAnswer(currentTriviaQ?.a||0);
+      clearInterval(triviaState.timer);
+      setTimeout(()=>masterNextTrivia(),3000);
     }
   }
-  const titleEl=$('pgTrTitle'); if(titleEl) titleEl.textContent=isMe?'TOCCA A TE!':'Tocca a '+(players[msg.personId]?.name||'?');
-  if(isMe){ sOk(); vib([80,40,80]); }
 };
 
-let _truthVotes={yes:0,no:0};
-gmh['truth_vote']=(msg)=>{
-  if(!isHost)return;
-  if(msg.yes) _truthVotes.yes++; else _truthVotes.no++;
-  const vEl=$('msTDVotes'); if(!vEl)return;
-  const total=_truthVotes.yes+_truthVotes.no;
-  vEl.innerHTML=`
-    <div style="display:flex;gap:10px;align-items:center;background:var(--s2);border-radius:10px;padding:8px 14px;">
-      <span style="font-size:20px;">👍</span><span style="font-family:var(--fd);font-size:22px;color:var(--teal);">${_truthVotes.yes}</span>
-      <span style="color:var(--dim);margin:0 4px;">vs</span>
-      <span style="font-size:20px;">👎</span><span style="font-family:var(--fd);font-size:22px;color:var(--rose);">${_truthVotes.no}</span>
-      <span style="font-size:9px;letter-spacing:2px;color:var(--dim);margin-left:6px;">${total} voti</span>
-    </div>`;
-};
-//  - Ad ogni player viene assegnato un personaggio
-//  - Lo vedono tutti TRANNE lui (appare sul master TV)
-//  - Fai domande sì/no a turno
-//  - Chi indovina guadagna punti
-//  - Tempo limitato per domanda
 // ═══════════════════════════════════════════
-const WHO_AM_I=[
-  '🏰 Re Carlo III','🎤 Taylor Swift','⚽ Cristiano Ronaldo','🎬 Leonardo DiCaprio',
-  '🍕 Un cuoco napoletano','🦁 Simba','🧙 Gandalf','🦸 Spider-Man',
-  '🎩 Harry Houdini','🎸 Freddie Mercury','🌙 Elton John','🎨 Picasso',
-  '🚀 Elon Musk','🍎 Steve Jobs','🎯 James Bond','🧪 Einstein',
-  '🦄 Un unicorno','🤖 ChatGPT','🌮 Un taco messicano','🍌 Una banana ribelle',
-  '🎃 Un fantasma triste','🐸 Kermit la rana','🦊 Fantasia','🐉 Smaug il drago',
-  '🧸 Un orsacchiotto abbandonato','🎠 Un cavallo da giostra','🌵 Un cactus solitario',
+//  ── DISEGNA UBRIACO ──
+// ═══════════════════════════════════════════
+const DRAW_WORDS = [
+  'SPAGHETTI UBRIACO','GATTO CHE VOLA','PIZZA VOLANTE','SINDACO CHE BALLA',
+  'POLPO IN DISCOTECA','NONNO SKATER','CUOCO PAZZO','DINOSAURO HIPSTER',
+  'ASTRONAUTA IN BAGNO','CANE CHE CUCINA','PESCE CHE GUIDA','ELEFANTE BALLERINO',
+  'FANTASMA TRISTE','ROBOT INNAMORATO','BANANA SUPEREROE','MAGO DISPERATO',
+  'LUMACA SUL MOTORINO','ORSO BARISTA','PULPO DJ','TARTARUGA RAPPER',
 ];
+let drawState={word:'',drawer:null,round:0,maxRounds:0,timer:null,timeLeft:40,ctx:null,drawing:false,color:'#fff',size:6};
 
-let whoState={assignments:{},round:0,currentIdx:0,asked:false};
-
-function initMasterWhoIs(seed){
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  whoState={assignments:{},round:0,currentIdx:0,asked:false};
-  // Assign characters
-  const shuffled=[...WHO_AM_I].sort(()=>Math.random()-.5);
-  nonScreen.forEach((p,i)=>{ whoState.assignments[p.id]=shuffled[i%shuffled.length]; });
-  const gameArea=$('msGameArea'); if(!gameArea)return;
-  gameArea.innerHTML=`
-    <div style="font-size:10px;letter-spacing:4px;color:var(--gold);">🎭 CHI SONO IO?</div>
-    <div style="font-size:9px;letter-spacing:2px;color:var(--dim);text-align:center;">Ogni giocatore ha un personaggio — SOLO lui non lo sa!</div>
-    <div style="background:var(--s2);border:2px solid rgba(212,168,71,.3);border-radius:20px;padding:28px;text-align:center;width:100%;max-width:500px;">
-      <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:8px;">TOCCA A</div>
-      <div style="font-family:var(--fd);font-size:28px;margin-bottom:16px;" id="msWIName">---</div>
-      <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:8px;">IL SUO PERSONAGGIO È</div>
-      <div style="font-family:var(--fd);font-size:clamp(24px,5vw,48px);color:var(--gold);" id="msWIChar">---</div>
-    </div>
-    <div style="font-size:12px;color:var(--dim);text-align:center;" id="msWIHint">Il giocatore fa domande sì/no al gruppo per scoprirlo!</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-      <button onclick="whoIsNext()" class="btn btn-gold" style="width:auto;padding:14px 24px;touch-action:manipulation;">▶ PROSSIMO</button>
-      <button onclick="whoIsGuessed()" class="btn btn-teal" style="width:auto;padding:14px 24px;font-size:13px;touch-action:manipulation;">🎉 HA INDOVINATO!</button>
-    </div>`;
-  whoIsNext();
-  // IMPORTANT: send each player ONLY their own character, NOT a full assignment map (spoiler bug)
-  nonScreen.forEach(p => {
-    gMsg({type:'whois_my_char', targetId: p.id, char: whoState.assignments[p.id]});
-  });
-  // Also send ALL assignments to everyone so they can see others (but NOT their own)
-  gMsg({type:'whois_start', assignments: whoState.assignments});
-}
-
-function whoIsNext(){
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  if(whoState.currentIdx>=nonScreen.length){endWhoIsGame();return;}
-  const person=nonScreen[whoState.currentIdx++];
-  const char=whoState.assignments[person.id]||'???';
-  $('msWIName').textContent=person.name; $('msWIName').style.color=person.color;
-  $('msWIChar').textContent=char;
-  gMsg({type:'whois_turn',personId:person.id,char});
-  tone(440,'sine',.2,.4); vib(40);
-}
-
-function whoIsGuessed(){
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  const prev=nonScreen[whoState.currentIdx-1];
-  if(prev?.teamId){ socket.emit('judge_award',{teamId:prev.teamId,pts:15,reason:'Ha indovinato il personaggio!'}); }
-  sCheer(); vib([60,30,120]); fx('🎉 HA INDOVINATO! +15','var(--gold)');
-}
-
-function endWhoIsGame(){
-  let winner=null,best=0;
-  teams.forEach(t=>{if((t.score||0)>best){best=t.score;winner=t;}});
-  socket.emit('game_over',{winners:winner?[winner.id]:[]});
-}
-
-function initPlayerWhoIs(){
-  $('pgBody').innerHTML=`
-    <div class="wait-pulse" style="font-size:50px;" id="pgWIEmoji">🎭</div>
-    <div style="font-family:var(--fd);font-size:20px;color:var(--gold);text-align:center;" id="pgWITitle">CHI SONO IO?</div>
-    <div id="pgWIOthers" style="background:var(--s2);border:1px solid rgba(212,168,71,.15);border-radius:14px;padding:16px;width:100%;max-width:360px;display:none;">
-      <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:8px;">PERSONAGGI DEGLI ALTRI 👀</div>
-      <div id="pgWIOtherList" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--dim);text-align:center;" id="pgWISub">Aspetta l'inizio...</div>`;
-}
-
-let _myWhoIsChar='';
-
-gmh['whois_my_char']=(msg)=>{
-  if(isHost)return;
-  // Only the targeted player receives and stores their own char (NOT shown)
-  if(msg.targetId===myId){ _myWhoIsChar=msg.char; }
-};
-
-gmh['whois_start']=(msg)=>{
-  if(isHost)return;
-  // Show ONLY others' characters (filter out my own ID so I can't see mine)
-  const others=Object.entries(msg.assignments).filter(([id])=>id!==myId);
-  if(others.length>0){
-    const othersEl=$('pgWIOthers'); const listEl=$('pgWIOtherList');
-    if(othersEl) othersEl.style.display='block';
-    if(listEl) listEl.innerHTML=others.map(([id,char])=>{
-      const p=players[id]; return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,.04);border-radius:8px;">
-        <span style="font-size:16px;">${p?.emoji||'👤'}</span>
-        <span style="font-size:11px;color:${p?.color||'var(--cream)'};flex:1;">${p?.name||'?'}</span>
-        <span style="font-size:12px;color:var(--cream);">${char}</span>
-      </div>`;
-    }).join('');
-  }
-  $('pgWISub').textContent='Guarda la TV — il tuo turno arriva!';
-};
-
-gmh['whois_turn']=(msg)=>{
-  if(isHost)return;
-  const isMe=msg.personId===myId;
-  const titleEl=$('pgWITitle'); const subEl=$('pgWISub'); const emojiEl=$('pgWIEmoji');
-  if(titleEl) titleEl.textContent=isMe?'🎭 TOCCA A TE!':'Tocca a '+(players[msg.personId]?.name||'?');
-  if(subEl) subEl.textContent=isMe?'Fai domande sì/no al gruppo per indovinare chi sei!':'Rispondi solo SÌ o NO alle domande!';
-  if(isMe){
-    sOk(); vib([80,40,80]);
-    if(emojiEl) emojiEl.textContent='❓';
-    // Show hint: how many letters in their character name (but NOT the name)
-    const charLen=_myWhoIsChar?_myWhoIsChar.replace(/[^ ]/g,'□'):'???';
-    if(subEl) subEl.innerHTML=`Fai domande sì/no!<br><span style="color:var(--dim);font-size:9px;letter-spacing:2px;">IL TUO PERSONAGGIO: ${charLen}</span>`;
-  } else {
-    if(emojiEl) emojiEl.textContent='👀';
-  }
-};
-
-// ═══════════════════════════════════════════
-//  ══ 🗳️ VOTA IL PIÙ... ══
-//  - Domande stile "Chi è il più..."
-//  - Tutti votano sul telefono
-//  - Il master mostra i risultati in tempo reale
-//  - Chi riceve più voti su di sé: +5 pts
-//  - La squadra di chi vota il vincitore: +3 pts
-// ═══════════════════════════════════════════
-const VOTE_Q=[
-  "Chi è il PIÙ CORAGGIOSO del gruppo?",
-  "Chi è il più probabile a diventare famoso?",
-  "Chi mangerebbe di più in un all-you-can-eat?",
-  "Chi è il più romantico?",
-  "Chi farebbe prima a perdere in un'isola deserta?",
-  "Chi è il più testardo?",
-  "Chi sarebbe il miglior capo di stato?",
-  "Chi è il più bravo a fare scuse?",
-  "Chi passerebbe più facilmente un provino per un reality?",
-  "Chi è il più nottambulo?",
-  "Chi è il più competitivo?",
-  "Chi è il più bravo a cucinare?",
-  "Chi è il più difficile da svegliare?",
-  "Chi farebbe prima ad andare in prigione (innocente)?",
-  "Chi è il più probabile a dimenticare un anniversario?",
-  "Chi riderebbe per primo in una situazione imbarazzante?",
-  "Chi è il più bravo a mentire?",
-  "Chi passerebbe tutta la notte a guardare serie TV?",
-];
-
-let voteState={qIdx:0,currentQ:'',votes:{},timer:null,tLeft:20,revealed:false};
-
-function initMasterVote(seed){
-  const sq=[...VOTE_Q].sort(()=>Math.random()-.5);
-  voteState={qIdx:0,currentQ:'',votes:{},timer:null,tLeft:20,revealed:false};
-  const gameArea=$('msGameArea'); if(!gameArea)return;
-  gameArea.innerHTML=`
-    <div style="font-size:10px;letter-spacing:4px;color:var(--gold);">🗳️ VOTA IL PIÙ...</div>
-    <div class="ms-question" id="msVQ" style="font-size:clamp(18px,3.5vw,32px);">Premi AVANTI!</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;" id="msVResults"></div>
+function initMasterDraw(seed) {
+  drawState={...drawState, round:0, maxRounds:Object.values(players).filter(p=>!p.isScreen).length||1};
+  const ga=$('msGameArea'); if(!ga) return;
+  ga.innerHTML=`
+    <div style="font-size:9px;letter-spacing:5px;color:var(--dim);">DISEGNA UBRIACO 🎨</div>
+    <canvas id="msDrCanvas" class="draw-canvas-ms"></canvas>
     <div style="display:flex;align-items:center;gap:24px;justify-content:center;">
-      <div class="big-timer" id="msVTimer" style="font-size:60px;">20</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button onclick="masterNextVote()" class="btn btn-gold" style="width:auto;padding:12px 20px;touch-action:manipulation;">▶ PROSSIMA</button>
-        <button onclick="masterRevealVote()" class="btn btn-rose" style="width:auto;padding:12px 20px;font-size:12px;touch-action:manipulation;" id="msVReveal" style="display:none;">👁 RIVELA</button>
+      <div class="big-timer" id="msDrawTimer">40</div>
+      <div style="text-align:center;">
+        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);">DISEGNA</div>
+        <div style="font-family:var(--fd);font-size:18px;" id="msDrawerName">---</div>
       </div>
-    </div>`;
-  masterNextVote();
+    </div>
+    <div class="guess-feed" id="msGuessFeed"></div>`;
+  const c=$('msDrCanvas');
+  const ctx=c.getContext('2d');
+  drawState.ctx=ctx;
+  c.width=380; c.height=380;
+  ctx.fillStyle='#12090e'; ctx.fillRect(0,0,380,380);
+  if(isHost) setTimeout(()=>masterNextDraw(seed), 300);
 }
 
-function masterNextVote(){
-  if(voteState.qIdx>=VOTE_Q.length){endVoteGame();return;}
-  const q=VOTE_Q[voteState.qIdx++];
-  voteState.currentQ=q; voteState.votes={}; voteState.tLeft=20; voteState.revealed=false;
-  $('msVQ').textContent=q;
-  $('msVResults').innerHTML='';
-  const timerEl=$('msVTimer');
-  if(timerEl){timerEl.textContent=20;timerEl.className='big-timer';}
-  gMsg({type:'vote_q',q,idx:voteState.qIdx});
-  clearInterval(voteState.timer);
-  voteState.timer=gt(()=>{
-    voteState.tLeft--;
-    if(timerEl){timerEl.textContent=voteState.tLeft;if(voteState.tLeft<=5)timerEl.className='big-timer urgent';}
-    if(voteState.tLeft<=0){clearInterval(voteState.timer);masterRevealVote();}
+function masterNextDraw(seed) {
+  if(drawState.round>=drawState.maxRounds){endDrawGame();return;}
+  drawState.round++;
+  const nonScreenPlayers=Object.values(players).filter(p=>!p.isScreen);
+  const drawer=nonScreenPlayers[(drawState.round-1)%nonScreenPlayers.length];
+  const wordIdx=Math.floor(((seed||Date.now())+drawState.round*7919)%DRAW_WORDS.length);
+  const word=DRAW_WORDS[wordIdx];
+  drawState.word=word; drawState.drawer=drawer?.id;
+  drawState.timeLeft=40;
+  // Clear canvas
+  if(drawState.ctx){drawState.ctx.fillStyle='#12090e';drawState.ctx.fillRect(0,0,380,380);}
+  $('msDrawerName').textContent=drawer?.name||'???';
+  $('msGuessFeed').innerHTML='';
+  gMsg({type:'draw_round',drawer:drawer?.id,word,round:drawState.round,total:drawState.maxRounds});
+  clearInterval(drawState.timer);
+  const timerEl=$('msDrawTimer');
+  drawState.timer=setInterval(()=>{
+    drawState.timeLeft--;
+    if(timerEl){timerEl.textContent=drawState.timeLeft;timerEl.className='big-timer'+(drawState.timeLeft<=10?' urgent':'');}
+    if(drawState.timeLeft<=0){clearInterval(drawState.timer);masterNextDraw(seed);}
   },1000);
-  tone(440,'sine',.2,.4);
 }
 
-function masterRevealVote(){
-  if(voteState.revealed)return;
-  voteState.revealed=true;
-  clearInterval(voteState.timer);
-  // Tally votes
-  const tally={};
-  Object.values(voteState.votes).forEach(vid=>{ tally[vid]=(tally[vid]||0)+1; });
-  // Sort by votes
-  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-  const el=$('msVResults'); if(!el)return;
-  el.innerHTML=sorted.map(([pid,cnt])=>{
-    const p=players[pid]; if(!p)return'';
-    const pct=Math.round(cnt/Math.max(1,Object.keys(voteState.votes).length)*100);
-    return`<div style="background:var(--s2);border:2px solid ${p.color}44;border-radius:14px;padding:14px 20px;text-align:center;min-width:100px;">
-      <div style="font-size:24px;">${p.emoji}</div>
-      <div style="font-family:var(--fd);font-size:16px;color:${p.color};">${p.name}</div>
-      <div style="font-family:var(--fd);font-size:28px;color:var(--gold);">${cnt}</div>
-      <div style="font-size:9px;letter-spacing:2px;color:var(--dim);">${pct}%</div>
-    </div>`;
-  }).join('');
-  // Award winner
-  if(sorted[0]){
-    const winner=players[sorted[0][0]];
-    if(winner?.teamId){socket.emit('judge_award',{teamId:winner.teamId,pts:5,reason:'Il più votato!'});}
-    fx('🏆 '+winner?.name+' è il più...!','var(--gold)'); sCheer();
-    spawnPtsPop('+5',winner?.color||'var(--gold)');
-  }
-  gMsg({type:'vote_reveal',tally});
-}
-
-function endVoteGame(){
-  clearInterval(voteState.timer);
+function endDrawGame() {
+  clearInterval(drawState.timer);
   socket.emit('game_over',{winners:[]});
 }
 
-function initPlayerVote(){
+// Player draw screen
+function initPlayerDraw() {
   $('pgBody').innerHTML=`
-    <div style="font-size:9px;letter-spacing:4px;color:var(--dim);text-align:center;">🗳️ VOTA IL PIÙ...</div>
-    <div class="q-text" id="pgVQ" style="text-align:center;min-height:60px;">In attesa...</div>
-    <div class="timer-bar"><div class="timer-fill" id="pgVBar" style="width:100%;"></div></div>
-    <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:360px;" id="pgVBtns"></div>
-    <div style="font-family:var(--fd);font-size:16px;text-align:center;" id="pgVFb"></div>`;
+    <div style="font-family:var(--fd);font-size:11px;letter-spacing:3px;color:var(--dim);" id="pgDrawRole">In attesa...</div>
+    <div class="draw-word-display" id="pgDrawWord">---</div>
+    <canvas id="pgDrCanvas" class="draw-canvas-player" style="height:200px;"></canvas>
+    <div class="draw-tools" id="pgDrawTools" style="display:none;"></div>
+    <div class="guess-input-row" id="pgGuessRow" style="display:none;">
+      <input class="guess-input" id="pgGuessInput" placeholder="Cosa stai vedendo?" maxlength="30" autocomplete="off" autocorrect="off">
+      <button class="btn btn-gold" onclick="sendDrawGuess()" style="width:auto;padding:12px 16px;touch-action:manipulation;">✓</button>
+    </div>
+    <div style="font-family:var(--fd);font-size:16px;text-align:center;" id="pgGuessFeedback"></div>`;
+  const inp=$('pgGuessInput');
+  if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendDrawGuess();});
 }
 
-let playerVoted=false, pVoteTimer=null;
+let isDrawer=false, drawGuessedCorrectly=false;
 
-gmh['vote_q']=(msg)=>{
-  if(isHost)return;
-  playerVoted=false;
-  $('pgVQ').textContent=msg.q;
-  $('pgVFb').textContent='';
-  const bar=$('pgVBar');
-  if(bar){bar.style.transition='none';bar.style.width='100%';void bar.offsetWidth;bar.style.transition='width 20s linear';bar.style.width='0%';}
-  let t=20;$('pgTimer').textContent=t;$('pgTimer').style.color='';
-  clearInterval(pVoteTimer);
-  pVoteTimer=gt(()=>{t--;$('pgTimer').textContent=t;if(t<=0)clearInterval(pVoteTimer);},1000);
-  // Show players as vote buttons (excluding self)
-  const nonScreen=Object.values(players).filter(p=>!p.isScreen);
-  $('pgVBtns').innerHTML=nonScreen.map(p=>`
-    <div class="opt-btn" id="vbtn_${p.id}" onclick="castVote('${p.id}')" style="display:flex;align-items:center;gap:10px;touch-action:manipulation;">
-      <span style="font-size:20px;">${p.emoji}</span>
-      <span style="color:${p.color};">${p.name}</span>
-    </div>`).join('');
+gameMsgHandlers['draw_round']=(msg)=>{
+  isDrawer=(msg.drawer===myId);
+  drawGuessedCorrectly=false;
+  $('pgDrawRole').textContent=isDrawer?'✏️ TOCCA A TE DISEGNARE':'🔍 INDOVINA IL DISEGNO';
+  $('pgDrawWord').textContent=isDrawer?msg.word:'?  '.repeat(msg.word.split(' ').map(w=>w.length).reduce((a,b)=>a+b,0)/3|0||4);
+  $('pgTimer').textContent='40';
+  const tools=$('pgDrawTools'), guessRow=$('pgGuessRow');
+  if(tools)tools.style.display=isDrawer?'flex':'none';
+  if(guessRow)guessRow.style.display=isDrawer?'none':'flex';
+  if($('pgGuessFeedback'))$('pgGuessFeedback').textContent='';
+  // Setup canvas
+  setupPlayerDrawCanvas();
+  // Timer
+  let t=40;const iv=setInterval(()=>{t--;$('pgTimer').textContent=t;if(t<=0)clearInterval(iv);},1000);
 };
 
-function castVote(pid){
-  if(playerVoted)return;
-  playerVoted=true;
-  const bar=$('pgVBar');if(bar){bar.style.transition='none';bar.style.width='0%';}
-  clearInterval(pVoteTimer);
-  document.querySelectorAll('[id^="vbtn_"]').forEach(b=>{b.style.opacity='.4';b.style.pointerEvents='none';});
-  const btn=$('vbtn_'+pid);if(btn){btn.style.opacity='1';btn.style.borderColor='var(--gold)';}
-  gMsg({type:'vote_cast',votedId:pid,voterId:myId,teamId:myTeamId});
-  $('pgVFb').textContent='✅ Votato!';$('pgVFb').style.color='var(--gold)';
-  sOk(); vib(40);
+function setupPlayerDrawCanvas() {
+  const c=$('pgDrCanvas'); if(!c) return;
+  c.width=c.offsetWidth||360; c.height=200;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#12090e'; ctx.fillRect(0,0,c.width,c.height);
+  if(!isDrawer) return;
+  // Colors
+  const colors=['#ffffff','#ff2752','#00e5ff','#ffe600','#00ff88','#ff7a00','#cc44ff','#111111'];
+  $('pgDrawTools').innerHTML=colors.map(col=>`<div class="color-dot ${col==='#ffffff'?'active':''}" style="background:${col};" onclick="pSetColor('${col}',this)"></div>`).join('')+
+    `<button class="size-btn" onclick="pSetSize(4)">S</button><button class="size-btn" onclick="pSetSize(8)">M</button><button class="size-btn" onclick="pSetSize(14)">L</button><button class="size-btn" onclick="pClearDraw()">🗑</button>`;
+  let drawing=false, lx=0, ly=0, col='#fff', sz=6;
+  const draw=(e)=>{if(!drawing)return;e.preventDefault();const r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e,x=t.clientX-r.left,y=t.clientY-r.top;ctx.strokeStyle=col;ctx.lineWidth=sz;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(x,y);ctx.stroke();gMsg({type:'draw_stroke',x1:lx/c.width,y1:ly/c.height,x2:x/c.width,y2:y/c.height,col,sz});lx=x;ly=y;};
+  c.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;const r=c.getBoundingClientRect(),t=e.touches[0];lx=t.clientX-r.left;ly=t.clientY-r.top;},{passive:false});
+  c.addEventListener('touchmove',draw,{passive:false});
+  c.addEventListener('touchend',()=>drawing=false,{passive:false});
+  c.addEventListener('mousedown',e=>{drawing=true;const r=c.getBoundingClientRect();lx=e.clientX-r.left;ly=e.clientY-r.top;});
+  c.addEventListener('mousemove',draw); c.addEventListener('mouseup',()=>drawing=false);
+  // Store refs
+  c._setCol=v=>{col=v;}; c._setSz=v=>{sz=v;}; c._clear=()=>{ctx.fillStyle='#12090e';ctx.fillRect(0,0,c.width,c.height);gMsg({type:'draw_stroke',clear:true});};
+}
+function pSetColor(col,el){$('pgDrCanvas')._setCol&&$('pgDrCanvas')._setCol(col);document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));el.classList.add('active');}
+function pSetSize(sz){$('pgDrCanvas')._setSz&&$('pgDrCanvas')._setSz(sz);}
+function pClearDraw(){$('pgDrCanvas')._clear&&$('pgDrCanvas')._clear();}
+
+function sendDrawGuess() {
+  if(drawGuessedCorrectly)return;
+  const inp=$('pgGuessInput'); if(!inp)return;
+  const guess=inp.value.trim().toLowerCase(); if(!guess)return;
+  gMsg({type:'draw_guess',guess,playerId:myId,teamId:myTeamId,name:players[myId]?.name||'?'});
+  inp.value='';
 }
 
-gmh['vote_cast']=(msg)=>{
-  if(!isHost)return;
-  voteState.votes[msg.voterId]=msg.votedId;
-  // Live count on master
-  const tally={};
-  Object.values(voteState.votes).forEach(vid=>{ tally[vid]=(tally[vid]||0)+1; });
-  const el=$('msVResults'); if(!el)return;
-  const total=Object.keys(voteState.votes).length;
-  const totalPlayers=Object.values(players).filter(p=>!p.isScreen).length;
-  el.innerHTML=`<div style="font-size:11px;letter-spacing:3px;color:var(--dim);width:100%;text-align:center;">${total}/${totalPlayers} voti ricevuti</div>`+
-    Object.entries(tally).sort((a,b)=>b[1]-a[1]).map(([pid,cnt])=>{
-      const p=players[pid];if(!p)return'';
-      return`<div style="background:${p.color}18;border:1px solid ${p.color}44;border-radius:10px;padding:10px 16px;text-align:center;">
-        <div style="font-size:18px;">${p.emoji} ${p.name}</div>
-        <div style="font-family:var(--fd);font-size:24px;color:${p.color};">${cnt}</div>
-      </div>`;
-    }).join('');
-  if(total>=totalPlayers){ clearInterval(voteState.timer); gto(masterRevealVote,500); }
+gameMsgHandlers['draw_stroke']=(msg)=>{
+  // Players receive and render strokes on master
+  if(!isHost) return;
+  const c=$('msDrCanvas'); if(!c||!drawState.ctx)return;
+  const ctx=drawState.ctx;
+  if(msg.clear){ctx.fillStyle='#12090e';ctx.fillRect(0,0,380,380);return;}
+  ctx.strokeStyle=msg.col;ctx.lineWidth=msg.sz;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(msg.x1*380,msg.y1*380);ctx.lineTo(msg.x2*380,msg.y2*380);ctx.stroke();
 };
 
-gmh['vote_reveal']=(msg)=>{
-  if(isHost)return;
-  const bar=$('pgVBar');if(bar){bar.style.transition='none';bar.style.width='0%';}
-  clearInterval(pVoteTimer);
-  $('pgTimer').textContent='';
+gameMsgHandlers['draw_guess']=(msg)=>{
+  const correct=msg.guess.toLowerCase()===drawState.word.toLowerCase()||drawState.word.toLowerCase().includes(msg.guess.toLowerCase())&&msg.guess.length>3;
+  // Show in master guess feed
+  const feed=$('msGuessFeed');
+  if(feed){
+    const row=document.createElement('div');
+    row.className='guess-row'+(correct?' guess-correct':'');
+    row.innerHTML=`<span style="color:${teams.find(t=>t.id===msg.teamId)?.color||'var(--cream)'}">${msg.name}:</span> <span>${msg.guess}</span>${correct?' ✅':''}`;
+    feed.insertBefore(row,feed.firstChild);
+    if(feed.children.length>5)feed.removeChild(feed.lastChild);
+  }
+  if(correct){
+    const pts=drawState.timeLeft>20?15:10;
+    socket.emit('judge_award',{teamId:msg.teamId,pts,reason:'Indovinato!'});
+    fx('🎨 '+msg.name+' HA INDOVINATO! +'+pts, teams.find(t=>t.id===msg.teamId)?.color||'var(--gold)');
+    clearInterval(drawState.timer);
+    setTimeout(()=>masterNextDraw(),3000);
+  }
+};
+
+gameMsgHandlers['draw_guess']=(msg)=>{
+  // Player side: check if I guessed correctly (via server echo)
+  if(isHost){
+    const correct=msg.guess.toLowerCase()===drawState.word.toLowerCase()||drawState.word.toLowerCase().includes(msg.guess.toLowerCase())&&msg.guess.length>3;
+    const feed=$('msGuessFeed');
+    if(feed){const row=document.createElement('div');row.className='guess-row'+(correct?' guess-correct':'');row.innerHTML=`<span style="color:${teams.find(t=>t.id===msg.teamId)?.color||'var(--cream)'}">${msg.name}:</span> <span>${msg.guess}</span>${correct?' ✅':''}`;feed.insertBefore(row,feed.firstChild);if(feed.children.length>5)feed.removeChild(feed.lastChild);}
+    if(correct){const pts=drawState.timeLeft>20?15:10;socket.emit('judge_award',{teamId:msg.teamId,pts,reason:'Indovinato!'});fx('🎨 '+msg.name+' HA INDOVINATO! +'+pts,teams.find(t=>t.id===msg.teamId)?.color||'var(--gold)');clearInterval(drawState.timer);setTimeout(()=>masterNextDraw(),3000);}
+  } else {
+    // Player sees their own guess echoed — check
+    if(msg.playerId===myId){
+      const correct=msg.guess.toLowerCase()===drawState.word.toLowerCase();
+      if(correct){drawGuessedCorrectly=true;$('pgGuessFeedback').textContent='🎉 INDOVINATO!';$('pgGuessFeedback').style.color='var(--teal)';sSuccess();vib([60,30,120]);}
+    }
+  }
+};
+
+gameMsgHandlers['draw_stroke']=(msg)=>{
+  // Mirror strokes from drawer to: master screen AND other players
+  if(isHost){
+    const c=$('msDrCanvas');if(!c)return;const ctx=drawState.ctx;if(!ctx)return;
+    if(msg.clear){ctx.fillStyle='#12090e';ctx.fillRect(0,0,380,380);return;}
+    ctx.strokeStyle=msg.col;ctx.lineWidth=msg.sz;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(msg.x1*380,msg.y1*380);ctx.lineTo(msg.x2*380,msg.y2*380);ctx.stroke();
+  } else if(!isDrawer){
+    const c=$('pgDrCanvas');if(!c)return;const ctx=c.getContext('2d');
+    if(msg.clear){ctx.fillStyle='#12090e';ctx.fillRect(0,0,c.width,c.height);return;}
+    ctx.strokeStyle=msg.col;ctx.lineWidth=msg.sz;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(msg.x1*c.width,msg.y1*c.height);ctx.lineTo(msg.x2*c.width,msg.y2*c.height);ctx.stroke();
+  }
 };
 
 // ═══════════════════════════════════════════
 //  GAME OVER → VICTORY
 // ═══════════════════════════════════════════
-function onGameOver(data){
-  clearAllGameTimers();
-  teams=(data.teams||[]); players={}; (data.players||[]).forEach(p=>players[p.id]=p);
+function onGameOver(data) {
+  clearInterval(triviaState.timer);
+  clearInterval(drawState.timer);
+  teams = data.teams||[];
+  players = {}; (data.players||[]).forEach(p=>players[p.id]=p);
+  // Find winner
   const sorted=[...teams].sort((a,b)=>(b.score||0)-(a.score||0));
   const winner=sorted[0];
-  if(winner&&(winner.score||0)>0) showVictory(winner);
-  else { if(isHost)backToMaster(); else ss('playerWait'); }
+  if(winner) showVictory(winner);
+  else { if(isHost)backToMaster(); }
 }
 
-function showVictory(team){
+function showVictory(team) {
   ss('victoryScreen');
   $('victoryTrophy').textContent=team.emoji||'🏆';
   $('winnerName').textContent=team.name;
   $('winnerName').style.webkitTextFillColor='unset';
   $('winnerName').style.color=team.color;
-  $('victoryTrophy').style.filter=`drop-shadow(0 0 30px ${team.color})`;
-  $('winnerSub').textContent='VINCITORE DI QUESTO ROUND · '+team.score+' PUNTI';
+  $('winnerSub').textContent='VINCITORE DI QUESTO ROUND — '+team.score+' PUNTI';
   launchFireworks(team.color);
   launchConfetti();
-  sWin(); vib([100,50,100,50,200]);
-  gto(()=>spawnPtsPop('🏆',team.color),600);
+  sCheer(); vib([100,50,100,50,200]);
+  setTimeout(()=>spawnPtsPop('🏆',team.color),500);
 }
 
-function launchFireworks(color){
-  const fw=$('fireworks'); if(!fw)return; fw.innerHTML='';
-  const colors2=[color,'#ffffff',color,'#ffd700','var(--rose)'];
-  for(let i=0;i<40;i++){
+function launchFireworks(color) {
+  const fw=$('fireworks'); if(!fw) return;
+  fw.innerHTML='';
+  for(let i=0;i<30;i++){
     const el=document.createElement('div'); el.className='fw';
-    const a=Math.random()*Math.PI*2, d=60+Math.random()*250;
-    el.style.cssText=`left:${30+Math.random()*40}%;top:${10+Math.random()*40}%;background:${colors2[i%5]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;animation-delay:${Math.random()*1.2}s;animation-duration:${1+Math.random()*1}s;`;
+    const angle=Math.random()*Math.PI*2, dist=80+Math.random()*200;
+    el.style.cssText=`left:${40+Math.random()*20}%;top:${20+Math.random()*30}%;background:${[color,'#fff',color,'#ffd700'][i%4]};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation-delay:${Math.random()*.8}s;animation-duration:${1+Math.random()*.8}s;`;
     fw.appendChild(el);
   }
 }
 
-function launchConfetti(){
-  const colors=['#d4a847','#e8456a','#2dd4bf','#ffffff','#ff7a00','#cc44ff'];
-  for(let i=0;i<60;i++){
-    const el=document.createElement('div');el.className='confetti-piece';
-    el.style.cssText=`left:${Math.random()*100}%;background:${colors[i%colors.length]};animation-delay:${Math.random()*2.5}s;animation-duration:${2.5+Math.random()*2}s;transform:rotate(${Math.random()*360}deg);`;
-    document.body.appendChild(el);setTimeout(()=>el.remove(),6000);
+function launchConfetti() {
+  const colors=['#d4a847','#e8456a','#2dd4bf','#ffffff','#ff7a00'];
+  for(let i=0;i<40;i++){
+    const el=document.createElement('div'); el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}%;background:${colors[i%colors.length]};animation-delay:${Math.random()*2}s;animation-duration:${2+Math.random()*2}s;transform:rotate(${Math.random()*360}deg);`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),5000);
   }
 }
 
 // ═══════════════════════════════════════════
-//  KEYDOWN + GLOBAL
+//  KEYDOWN
 // ═══════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     if($('hostPanel')?.style.display!=='none')createRoom();
     if($('joinPanel')?.style.display!=='none')joinRoom();
-    if(document.activeElement?.id==='pgDInput')sendDrawGuess();
-    if(document.activeElement?.id==='pgGuessInput')sendDrawGuess();
+    if($('pgGuessInput')===document.activeElement)sendDrawGuess();
   }
 });
 
+// ═══════════════════════════════════════════
+//  TOUCH GUARD
+// ═══════════════════════════════════════════
 let lt=0;
 document.addEventListener('touchend',e=>{
-  const n=Date.now();
-  if(n-lt<250&&e.target.tagName!=='INPUT'&&e.target.tagName!=='SELECT')e.preventDefault();
-  lt=n;
+  const n=Date.now(); if(n-lt<250&&e.target.tagName!=='INPUT')e.preventDefault(); lt=n;
 },{passive:false});
 </script>
 </body>
